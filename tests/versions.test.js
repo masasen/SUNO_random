@@ -134,22 +134,24 @@ test("歌詞テーマは全版で V4 と同じ候補を使う", async () => {
   await page.close();
 });
 
-test("Never use / Avoid は V1 / V2 も V4 と同じ共通 1 行、V3 は専用の 1 行", async () => {
+test("Never use は V1 / V2 も V4 と共通、Avoid は V4 から hardstyle / dubstep を外した 1 行、V3 は専用の 1 行", async () => {
   const { page } = await openPage();
   await useVersion(page, "v4");
   const never = await slotSource(page, "never");
   const avoid = await slotSource(page, "avoid");
   assert.equal(never.split("\n").length, 1);
   assert.equal(avoid.split("\n").length, 1);
+  const v12Avoid = avoid.replace("dubstep wobble, hardstyle kicks, ", "");
+  assert.notEqual(v12Avoid, avoid);
   for (const id of ["v1", "v2"]) {
     await useVersion(page, id);
     assert.equal(await slotSource(page, "never"), never, id + " の Never use");
-    assert.equal(await slotSource(page, "avoid"), avoid, id + " の Avoid");
+    assert.equal(await slotSource(page, "avoid"), v12Avoid, id + " の Avoid");
     const chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
     for (const chip of chips) {
       await page.click('#patternChips .chip[data-id="' + chip + '"]');
       assert.equal(await slotSource(page, "never"), never, id + " のパターン " + chip + " 選択後も Never use は共通");
-      assert.equal(await slotSource(page, "avoid"), avoid, id + " のパターン " + chip + " 選択後も Avoid は共通");
+      assert.equal(await slotSource(page, "avoid"), v12Avoid, id + " のパターン " + chip + " 選択後も Avoid は 1 行");
     }
   }
   await useVersion(page, "v3");

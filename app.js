@@ -13,7 +13,7 @@ const ACTIVE_VERSION_KEY = "suno_random_active_version";
 // 歌詞テーマ・古文フラグメント・Never use / Avoid は V4 のデータを正本として全版で共通に使う
 const SHARED_SOURCE = "v4";
 const HINT_SLOT_NEVER = "ベースに関わらず必ず入る禁止語リスト（V1 / V2 / V4 共通・1 行、V3 は専用の 1 行）。行を増やすと候補としてランダム抽選されます。";
-const HINT_SLOT_AVOID = "ベースに関わらず出力の最後に必ず付きます（V1 / V2 / V4 共通・1 行、V3 は専用の 1 行）。行を増やすと候補としてランダム抽選されます。";
+const HINT_SLOT_AVOID = "ベースに関わらず出力の最後に必ず付きます（1 行。V1 / V2 / V3 は各版のデータで専用に持つ）。行を増やすと候補としてランダム抽選されます。";
 const HINT_THEME = "V4 の 14 曲の歌詞メタデータから起こしたテーマ 14 ＋ 追加テーマ（共通モチーフ・ボス戦・旧 V1〜V3 のテーマ）。全版共通です。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。";
 const HINT_TRIM_SETS = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は念押し系（Keep …）→ 副次説明（Future Bass is secondary …）→ サンプリング指示の順に落とすので、Phase / Stage の記述は最後まで残ります。メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
 const HINT_TRIM_DJ = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
@@ -74,7 +74,7 @@ const VERSIONS = [
 let version = null;
 let data = null;
 
-// 版のデータに V4 の共通データを重ねる。版が自前で持つ Never use / Avoid（V3）はそちらを優先する
+// 版のデータに V4 の共通データを重ねる。版が自前で持つ Never use / Avoid（V3 の両方、V1 / V2 の Avoid）はそちらを優先する
 function resolveData(id) {
   const own = window.PROMPT_DATA[id];
   const shared = window.PROMPT_DATA[SHARED_SOURCE];

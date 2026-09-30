@@ -1,6 +1,6 @@
 // V1 のプロンプト候補データ（prompt.md の 10 パターン ＋ Thema.md の 14 テーマ）。
 // このファイルだけ編集すれば V1 の候補が更新されます。変更後はページを再読み込みしてください。
-// 歌詞テーマ・古文フラグメント・Never use / Avoid は prompt-data-v4.js を全版共通で使う（V3 の Never use / Avoid は専用）。
+// 歌詞テーマ・古文フラグメント・Never use は prompt-data-v4.js を全版共通で使う。Avoid は V1 / V2 それぞれがこのファイルで持つ。
 (window.PROMPT_DATA = window.PROMPT_DATA || {}).v1 = (() => {
 
 const PATTERNS = [
@@ -116,6 +116,9 @@ const GENRE_SWAPS = [
 "city pop", "shoegaze", "ska punk", "disco funk", "jungle",
 ];
 
+// V4 の Avoid から、ジャンル置換の候補（hardstyle / dubstep）と矛盾する hardstyle kicks / dubstep wobble を外した 1 行
+const AVOID_FIXED = "Avoid: male vocal, duet, choir, metal screams or growls, thin weak low end, muddy mix, generic big-room festival drops, rock band arrangement, orchestral cinematic scoring, acoustic ballad, overtuned robotic vocal, long fade-out.";
+
 const BPM_EXTRA = [
 "BPM 150-160.", "BPM 155-165.", "BPM 160-170.", "BPM 165-175.", "BPM 170-180.",
 ];
@@ -125,5 +128,6 @@ return {
   bpmExtra: BPM_EXTRA,
   lyricsRatios: LYRICS_RATIOS,
   genreSwaps: GENRE_SWAPS,
+  avoid: [AVOID_FIXED],
 };
 })();

@@ -10,10 +10,11 @@ const ACTIVE_VERSION_KEY = "suno_random_active_version";
 // ── 版の定義 ──
 // 候補データは prompt-data-v1〜v4.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
 
-const HINT_SLOT_NEVER_SETS = "1 行 1 候補（禁止語リストを丸ごと 1 行）。全テーマ共通で末尾から 2 番目に付きます。";
-const HINT_SLOT_AVOID_SETS = "1 行 1 候補。全テーマ共通で出力の最後に付きます。";
-const HINT_SLOT_NEVER_FIXED = "ベースに関わらず必ず入る禁止語リスト（全ベース共通・1 行）。行を増やすと候補としてランダム抽選されます。";
-const HINT_SLOT_AVOID_FIXED = "ベースに関わらず出力の最後に必ず付きます（全ベース共通・1 行）。行を増やすと候補としてランダム抽選されます。";
+// 歌詞テーマ・古文フラグメント・Never use / Avoid は V4 のデータを正本として全版で共通に使う
+const SHARED_SOURCE = "v4";
+const HINT_SLOT_NEVER = "ベースに関わらず必ず入る禁止語リスト（V1 / V2 / V4 共通・1 行、V3 は専用の 1 行）。行を増やすと候補としてランダム抽選されます。";
+const HINT_SLOT_AVOID = "ベースに関わらず出力の最後に必ず付きます（V1 / V2 / V4 共通・1 行、V3 は専用の 1 行）。行を増やすと候補としてランダム抽選されます。";
+const HINT_THEME = "V4 の 14 曲の歌詞メタデータから起こしたテーマ 14 ＋ 追加テーマ（共通モチーフ・ボス戦・旧 V1〜V3 のテーマ）。全版共通です。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。";
 const HINT_TRIM_SETS = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は念押し系（Keep …）→ 副次説明（Future Bass is secondary …）→ サンプリング指示の順に落とすので、Phase / Stage の記述は最後まで残ります。メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
 const HINT_TRIM_DJ = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
 const HINT_V12 = {
@@ -22,9 +23,9 @@ const HINT_V12 = {
   genre: "メイン 1 行目の中の語を、下の候補からランダムに選んだ 1 語で置き換えます。例: <code>Future Bass</code> → <code>punk</code>。他の段落はそのまま流用されるので、曲の空気だけが強制的に変わります。",
   core: "1 行 1 候補（長文 1 行）。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。No.5 / No.10 は Stage・Phase 記述がこの役割を兼ねるため、パターン選択時に自動でその行が入ります。",
   extra: "サンプリング指示 / 質感指示 / Future Bass の扱い / Stage・Phase 記述。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは、ここが末尾の段落から順に削られます。",
-  theme: "Thema.md の 14 テーマを英訳したもの。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
-  never: HINT_SLOT_NEVER_SETS,
-  avoid: HINT_SLOT_AVOID_SETS,
+  theme: HINT_THEME,
+  never: HINT_SLOT_NEVER,
+  avoid: HINT_SLOT_AVOID,
   trim: HINT_TRIM_SETS,
   analysis: "",
 };
@@ -32,8 +33,9 @@ const HINT_DJ = {
   bpm: "1 行 1 候補。生成時にランダムで 1 行選ばれます。解析値（BPM とキー）をそのまま入れてあるので、完全模倣ならベースと同じ行を固定してください。",
   core: "1 行 1 候補（長文 1 行）。キック・ベース・ハット・シンセの具体的な音作り。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。",
   extra: "DJ サンプリング / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops の順に段落が削られ、Samples は最後まで残ります。",
-  never: HINT_SLOT_NEVER_FIXED,
-  avoid: HINT_SLOT_AVOID_FIXED,
+  theme: HINT_THEME,
+  never: HINT_SLOT_NEVER,
+  avoid: HINT_SLOT_AVOID,
   trim: HINT_TRIM_DJ,
 };
 const DROP_ORDER_SETS = [/^keep\b/i, /^future bass (is|remains)\b/i, /sampl(e|ing)/i];
@@ -55,8 +57,6 @@ const VERSIONS = [
     hints: Object.assign({}, HINT_DJ, {
       pattern: "全ベースの土台は StreetDanceEDM#07「Glass Cherry Maze」の MP3 メタデータ準拠（half-time phonk × street dance / makina / G minor / 語りラップのヴァース / 叫ばないベルト。BPM のみ実測 184）。その上に「TRANCE × EDM BANGER Vol.31」の 10 曲（Tr.01〜Tr.10）の個性を載せ、競合する指定は土台を優先しています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ の各候補欄が、そのベースの内容で先頭に差し込まれます（既存の候補は残ります）。",
       genre: "メイン 1 行目の中の語を、下の候補からランダムに選んだ 1 語で置き換えます。例: <code>trance</code> → <code>hard trance</code>。完全模倣が目的なので既定は OFF です。崩したいときだけ有効にしてください。",
-      theme: "V3（音源の歌詞書き起こし由来 10 ＋ 追加 3）と V2（Thema.md の 14 テーマ）を融合した候補。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。",
-      trim: HINT_TRIM_DJ.replace("テーマ・古文・", "テーマ・"),
       analysis: "先頭は全ベースの土台「Glass Cherry Maze」（メタデータ準拠、参考に実測値）。続く 10 件は Vol.31（72:18、約 36:10 のセットが 2 周）前半 10 曲の解析値。いずれも librosa（BPM / キー / 帯域比 / ステレオ幅 / ピッチ推移）と Whisper（歌詞）で音源から直接測っています。",
     }),
   },
@@ -66,7 +66,6 @@ const VERSIONS = [
     hints: Object.assign({}, HINT_DJ, {
       pattern: "StreetDanceEDM #08 / #07 の Remove フォルダにある MP3 14 曲を、1 曲 1 ベースにしています。BPM・キー・帯域バランス・音量の山谷・終わり方は音源の実測値を優先し、実測で取れない声質・楽器の具体・ムード・歌詞テーマは MP3 のメタデータ（元プロンプト・歌詞）で補っています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ の各候補欄が、そのベースの内容で先頭に差し込まれます（既存の候補は残ります）。",
       genre: "メイン 1 行目の中の語を、下の候補からランダムに選んだ 1 語で置き換えます。例: <code>street dance</code> → <code>jersey club</code>。完全模倣が目的なので既定は OFF です。崩したいときだけ有効にしてください。",
-      theme: "14 曲の歌詞メタデータから起こしたテーマ 14 ＋ 追加テーマ（共通モチーフ・ボス戦・旧 V1〜V3 の未収録分）。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
       analysis: "先頭はデータ全体のまとめ。続く 14 件は各 MP3 の実測値（librosa: BPM / キー / 帯域比 / ステレオ幅 / H/P 比 / 2 秒窓の音量推移）と、それを補ったメタデータの要点です。",
     }),
   },
@@ -74,6 +73,18 @@ const VERSIONS = [
 
 let version = null;
 let data = null;
+
+// 版のデータに V4 の共通データを重ねる。版が自前で持つ Never use / Avoid（V3）はそちらを優先する
+function resolveData(id) {
+  const own = window.PROMPT_DATA[id];
+  const shared = window.PROMPT_DATA[SHARED_SOURCE];
+  return Object.assign({}, own, {
+    themes: uniq(shared.patterns.map((p) => p.theme).filter(Boolean).concat(shared.themes)),
+    never: own.never || shared.never,
+    avoid: own.avoid || shared.avoid,
+    classical: shared.classical,
+  });
+}
 
 function storeKey() {
   return "suno_simple_builder_" + version.id;
@@ -150,9 +161,9 @@ function defaultSources() {
     structure: uniq(patternValues("structure")).join(BLOCK_SEP),
     vocal:     uniq(patternValues("vocal")).join(BLOCK_SEP),
     ratio:     mergedValues("ratio", data.lyricsRatios).join("\n"),
-    theme:     mergedValues("theme", data.themes).join(BLOCK_SEP),
-    never:     mergedValues("never", data.never).join("\n"),
-    avoid:     mergedValues("avoid", data.avoid).join("\n"),
+    theme:     data.themes.join(BLOCK_SEP),
+    never:     uniq(data.never).join("\n"),
+    avoid:     uniq(data.avoid).join("\n"),
   };
 }
 
@@ -392,8 +403,8 @@ async function copyText(text) {
 
 const PATTERN_FIELDS = ["bpm", "main", "core", "extra", "structure", "vocal"];
 // パターンが持っている場合だけ差し替える。持たないパターンでは現在の選択を残す
-const PATTERN_OPTIONAL_FIELDS = ["ratio", "theme", "never", "avoid"];
-const FIELD_LABELS = { ratio: "Lyrics 比率", theme: "テーマ", never: "Never use", avoid: "Avoid" };
+const PATTERN_OPTIONAL_FIELDS = ["ratio", "theme"];
+const FIELD_LABELS = { ratio: "Lyrics 比率", theme: "テーマ" };
 
 function hoistCandidate(key, value) {
   if (!value) { setPicked(key, ""); return; }
@@ -775,7 +786,7 @@ function applyVersionView() {
 function switchVersion(id) {
   if (version) saveNow();
   version = VERSIONS.find((v) => v.id === id) || VERSIONS[VERSIONS.length - 1];
-  data = window.PROMPT_DATA[version.id];
+  data = resolveData(version.id);
   try { localStorage.setItem(ACTIVE_VERSION_KEY, version.id); } catch { /* noop */ }
 
   applyVersionView();

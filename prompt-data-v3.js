@@ -1,5 +1,6 @@
 // V3 のプロンプト候補データ（Glass Cherry Maze を土台に TRANCE × EDM BANGER Vol.31 の 10 曲）。
 // このファイルだけ編集すれば V3 の候補が更新されます。変更後はページを再読み込みしてください。
+// 歌詞テーマ・古文フラグメント・Never use / Avoid は prompt-data-v4.js を全版共通で使う（V3 の Never use / Avoid は専用）。
 (window.PROMPT_DATA = window.PROMPT_DATA || {}).v3 = (() => {
 
 // 全ベースの土台: StreetDanceEDM#07「Glass Cherry Maze」の MP3 メタデータ（元プロンプト・歌詞）に準拠。
@@ -164,29 +165,6 @@ const PATTERNS = [
   },
 ];
 
-// 「この瞬間を走り抜けろ！ 重低音・通勤・作業・ドライブ」のコンセプトと、土台曲のメタデータ歌詞から足した追加テーマ
-const THEME_EXTRA = [
-`Theme: a sweet glass thread she cannot cut. She says she is fine, but her fingertips shake, and every corner of the maze stabs her with one name.
-Scenes: a red thorn left in her chest, roses dropped at a corner of the maze, a door she closes, opens and closes again, a thread still tying them together.
-Emotion: pleading and sugary on the surface, quietly frightening underneath. So close, yet far. Never explained, never violent.
-Chorus: a two-word English phrase repeated, begging to be held in shape.`,
-
-`Theme: the morning commute as a starting line. She plugs in her earbuds and turns an ordinary train ride into her own race.
-Scenes: a crowded platform, reflections in the train window, footsteps matching the beat, a city waking up.
-Emotion: sleepy to fired-up. Small courage for an ordinary day.
-Chorus: this moment is hers to run through.`,
-
-`Theme: deep focus at work, the world shrinking to one task. Pressure turns into speed.
-Scenes: a desk lamp, a deadline, keys clicking in rhythm, cold coffee forgotten, the last push before finishing.
-Emotion: tense, then flowing, then proud. Not stress, but momentum.
-Chorus: nothing can stop her while the beat keeps going.`,
-
-`Theme: a dawn highway drive after a long night of thinking. She leaves the old version of herself in the rear-view mirror.
-Scenes: an empty highway, a toll gate, the sky turning pale, window down, wind in her hair.
-Emotion: release and quiet excitement about what comes next.
-Chorus: accelerate into the morning, no turning back.`,
-];
-
 // V2（Thema.md の 14 テーマ英訳）をそのまま融合
 const THEME_V2 = [
 `Theme: dark-cute love. She wants to look adorable, but her inner world is unstable and she cannot hide how much she depends on him. The relationship is not broken yet, just slightly unsafe, a little short of lovers.
@@ -288,9 +266,7 @@ return {
   bpmExtra: BPM_EXTRA,
   lyricsRatios: LYRICS_RATIOS,
   genreSwaps: GENRE_SWAPS,
-  themes: THEME_EXTRA,
   never: [NEVER_USE_FIXED],
   avoid: [AVOID_FIXED],
-  classical: "",
 };
 })();

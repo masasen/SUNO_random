@@ -1,5 +1,5 @@
 // V4 のプロンプト候補データ（StreetDanceEDM #07 / #08 の 14 曲）。
-// 歌詞テーマ（各パターンの theme ＋ THEME_EXTRA）・古文フラグメント・Never use / Avoid は V1〜V3 でも共通で使われる（V3 の Never use / Avoid だけは専用）。
+// 歌詞テーマ（各パターンの theme ＋ THEME_EXTRA）・古文フラグメント・Never use は V1〜V3 でも共通で使われる（V3 の Never use と V1〜V3 の Avoid は各版で専用）。
 // このファイルだけ編集すれば V4 の候補が更新されます。変更後はページを再読み込みしてください。
 // PATTERNS はベースパターンごとの候補、末尾の *_EXTRA 等は共通の追加候補です。
 (window.PROMPT_DATA = window.PROMPT_DATA || {}).v4 = (() => {

@@ -13,8 +13,8 @@ SUNO Simple Prompt Builder V1〜V4 の GitHub Pages 公開用リポジトリで�
 
 | 版 | ベースパターン | Never use / Avoid | 音源解析メモ |
 |---|---|---|---|
-| V1 | prompt.md の 10 パターン | V4 と共通の 1 行 | なし |
-| V2 | V1 ＋ 追加パターン 1 件 | V4 と共通の 1 行 | なし |
+| V1 | prompt.md の 10 パターン | Never use は V4 と共通、Avoid は専用の 1 行 | なし |
+| V2 | V1 ＋ 追加パターン 1 件 | Never use は V4 と共通、Avoid は専用の 1 行 | なし |
 | V3 | Glass Cherry Maze を土台に TRANCE × EDM BANGER Vol.31 の 10 曲 | V3 専用の 1 行 | あり |
 | V4 | StreetDanceEDM #07 / #08 の 14 曲 | 共通の 1 行 | あり |
 
@@ -25,7 +25,7 @@ SUNO Simple Prompt Builder V1〜V4 の GitHub Pages 公開用リポジトリで�
 1. GitHub で更新したい版の `prompt-data-v*.js` を開き、鉛筆アイコンから編集します。
 2. 既存ベースの内容は `PATTERNS` の各 `name` / `bpm` / `main` / `core` / `extra` / `structure` / `vocal` / `ratio` / `theme` を変更します。V3 / V4 の音源解析メモは `REFERENCE` と各パターンの `src` にあります。
 3. 版ごとの追加候補は `BPM_EXTRA` / `GENRE_SWAPS` / `LYRICS_RATIOS` を編集します。
-4. 全版共通の歌詞テーマ（V4 各パターンの `theme` ＋ `THEME_EXTRA`）、古文フラグメント（`CLASSICAL_FIXED`）、V1 / V2 / V4 共通の `NEVER_USE_FIXED` / `AVOID_FIXED` は `prompt-data-v4.js` で編集します。V3 の Never use / Avoid だけは `prompt-data-v3.js` の `NEVER_USE_FIXED` / `AVOID_FIXED` です。
+4. 全版共通の歌詞テーマ（V4 各パターンの `theme` ＋ `THEME_EXTRA`）、古文フラグメント（`CLASSICAL_FIXED`）、V1 / V2 / V4 共通の `NEVER_USE_FIXED` は `prompt-data-v4.js` で編集します。Avoid は各版のファイルの `AVOID_FIXED`（V1 / V2 は V4 から `hardstyle kicks` / `dubstep wobble` を外した内容）、V3 の Never use は `prompt-data-v3.js` の `NEVER_USE_FIXED` です。
 5. 変更を別ブランチにコミットし、Pull Request をマージすると Pages が自動更新されます。公開ページを再読み込みしてください。
 
 データ内容から版を自動判定するため、版番号の手動更新は不要です。候補データを変更すると、その版で端末内に保存された候補欄と選択状態は新しい初期値に切り替わります。履歴とプリセットは残ります。プリセットを呼び出すと、保存時点の古い候補が復元されます。

@@ -204,6 +204,147 @@ Chorus: a short battle cry about keeping her shape until the loop breaks.`,
 Scenes: a flashing hit counter, a riff that starts alone in the dark, heels sliding on a chessboard floor, power chords shaking the lights, one last breath before the save point.
 Emotion: playful, stubborn and a little dangerous; laughing at the pressure.
 Chorus: a repeated phrase about stepping out of the loop.`,
+
+// 旧ビルダー v1〜v4 にあって未収録だった歌詞テーマ（恋愛ジャンル別・日常・再出発など）
+`Theme: dark-cute love. She wants to look adorable, but her inner world is unstable and she cannot hide how much she depends on him. The relationship is not broken yet, just slightly unsafe, a little short of lovers.
+Scenes: her room, the mirror, unfinished makeup, a reply that never comes, the way home, a phone she keeps turning over, small private city moments.
+Emotion: sweetness mixed with impatience, jealousy, possessiveness and unease. Wording is a little calculated and a little toxic, but never too heavy. No horror imagery and no explicit violence.
+Chorus: short strong phrases repeated until they become addictive.`,
+
+`Theme: yami-kawaii love written pop. The weight is there, but it never turns dark. Cuteness, dependence, selfishness, anxiety and loneliness stay balanced.
+Scenes: an ordinary room, a mirror, a small gift, the walk home, waiting for an answer, a day that feels too long.
+Emotion: clingy but bright, sulky, needy, easily hurt. Use everyday words, never clinical or explanatory. Keep it pop and catchy.
+Chorus: one short line that sticks after a single listen, repeated.`,
+
+`Theme: grown-up cute love. She looks composed, but in front of him she cannot stay honest. They are just before becoming lovers, or already together while she pretends to be at ease.
+Scenes: a city view, the walk back from work, a cafe, a taxi, perfume, a jacket left behind, messages traded across a screen.
+Emotion: elegant, lightly teasing, shy, pretending to have room to spare while her real feelings shake. Avoid girlish speech and heavy slang.
+Chorus: adult and lingering, but still easy to hum.`,
+
+`Theme: a slightly sensual grown-up cute love. Poise, composure and playful games on the surface, loneliness underneath.
+Scenes: the end of a long day, a quiet bar, a coat, a window above the city, a hand almost taken, the walk to the station.
+Emotion: natural adult warmth rather than forced cuteness. Two sides at once: confident outside, unsteady inside.
+Chorus: sweet, memorable and softly repeated.`,
+
+`Theme: yandere love. She is far too devoted to one person and can no longer hide the weight of it. Unrequited or established, the fear of losing him sits at the center.
+Scenes: her room, the hours of waiting, a promise, a familiar route, a place full of memories, an object he left behind.
+Emotion: devotion, anxiety, possessiveness and weakening reason. Never explain madness directly; show it as quiet, heavy attachment. No crime or violence imagery.
+Chorus: short, strong feelings repeated with rising intensity.`,
+
+`Theme: yandere love that still keeps its cuteness. Heavy affection, loneliness and possessiveness carried in words that sound sweet.
+Scenes: her room, a promise, a saved message, a shared seat, the road they always walked.
+Emotion: earnest and fragile rather than frightening. Desperate love, never a threat.
+Chorus: an addictive short phrase repeated until it aches.`,
+
+`Theme: tsundere love. She is stubborn, cannot be honest, and keeps missing her own timing while trying to hide her feelings. They are close, but one step short.
+Scenes: a classroom or a street, a cafe, short messages, small misunderstandings, ordinary days.
+Emotion: embarrassment, pride, jealousy and the cuteness of a hidden truth. A little sharp, never cruel. Avoid loud anime clichés.
+Chorus: the one place where her real feelings leak out, just a little.`,
+
+`Theme: adult tsundere love. Not childish sharpness, but pretended composure, light jokes, deflection and clumsiness at showing anything real.
+Scenes: after work, a quiet street, a shared drink, an unsent message, the last train home.
+Emotion: guarded, teasing and quietly warm. Honesty arrives only once.
+Chorus: the moment she finally stops pretending.`,
+
+`Theme: the love life of a working woman in the city. She is capable and rational at work but a little fragile in love. Office romance, an ex, or something undefined — keep the distance realistic.
+Scenes: the commute, the office, lunch, the walk home after overtime, the last train, a Friday evening, a wine glass, messages traded slowly.
+Emotion: tiredness, hope, something she cannot give up on, a trace of warmth and a trace of loneliness. Adult natural wording with real daily texture.
+Chorus: unpretentious but memorable adult feeling.`,
+
+`Theme: the ordinary days and quiet love of a working adult woman. Nothing dramatic, just real life.
+Scenes: a morning train, a desk, a coffee gone cold, the walk home, a shared umbrella, a weekend that ends too fast.
+Emotion: a little tired, a little hopeful, a small flutter. Do not stack office jargon; keep the love inside daily life.
+Chorus: soft, natural and easy to sing.`,
+
+`Theme: a one-sided love that grows a little bigger on every ordinary day.
+Scenes: a glance, a short conversation, a message typed and deleted, the walk home, the same seat every week.
+Emotion: no grand destiny — small events swelling into something she cannot hold. Natural, singable Japanese.
+Chorus: simple, warm and rising.`,
+
+`Theme: two people who love each other but keep missing each other.
+Scenes: small everyday gaps, a call that ends too early, a plan postponed again, the same room holding two different silences.
+Emotion: loneliness rather than anger. The distance widens through tiny misalignments.
+Chorus: what stays unsaid, and what she still means.`,
+
+`Theme: the vague distance with someone she cannot forget after the end.
+Scenes: an old route, a saved photo, a familiar station, a message she keeps rewriting, a place they used to share.
+Emotion: lingering attachment, pride, memory, and knowing she should not look yet looking anyway. Adult and never over-explained.
+Chorus: restrained, with the truth sitting just underneath.`,
+
+`Theme: the small happiness of a day when love is going well.
+Scenes: morning light, a breakfast for two, a walk with no destination, a hand held on an ordinary street.
+Emotion: no big drama — an ordinary day that looks slightly special. Gentle, natural and easy to hum.
+Chorus: bright, simple and warm.`,
+
+`Theme: a girl everyone underestimates because she looks sweet — she flips it and owns the night on her own terms.
+Scenes: rain on a crosswalk, glitter on scuffed sneakers, a mirror check before walking in, a cracked phone screen still glowing, a whole room turning around when she arrives.
+Emotion: playful confidence and defiance rather than anger. Sweet outside, unshakable inside.
+Chorus: a short chantable title phrase repeated, then the reveal of what hides under the sweet surface.`,
+
+`Theme: a gentle, dignified breakup. Both know it is over and neither wants to blame the other. She wants to end it smiling and thank him for the time they shared.
+Scenes: the last walk together, calling his name one final time, a morning without him, looking up at a sky she has never seen before.
+Emotion: sorrow turning into quiet strength. No bitterness, no begging.
+Chorus: a short English title phrase, then the promise not to look back.`,
+
+`Theme: losing balance on a spinning dance floor and discovering she can rise instead of fall. Gravity stops being an enemy.
+Scenes: heels hitting the floor, the ceiling turning, a heartbeat slightly off-axis, the body moving before the mind, a sudden weightless lift.
+Emotion: dizzy exhilaration turning into self-possession. Her balance belongs to her.
+Chorus: if there is nowhere to fall, she names this place the sky.`,
+
+`Theme: waiting for a sign that never comes, then deciding to take one small step today on her own.
+Scenes: a dark road ahead, wind that will not change, footprints she leaves behind, a morning she chooses without a map.
+Emotion: fear set aside, not erased. Quiet determination rather than triumph.
+Chorus: her own direction, her own timing, already moving.`,
+
+`Theme: realizing she may have loved the future she imagined more than the person in front of her. She separates her own dream from him and decides to carry it herself.
+Scenes: the life she drew in her head, his voice she did not really hear, a wish handed over too heavily, looking at him again without the script.
+Emotion: honest self-reflection turning into mature, lighter love.
+Chorus: if she still loves him after all this, she wants to say it in a way that truly reaches him.`,
+
+`Theme: a couple pretending to be happy, painting daylight over the dark. She finally tears down the perfect picture and chooses honest pain over a pretty lie.
+Scenes: curtains opened only for show, matching photos, the same polite words, a silence they call peace.
+Emotion: numb calm cracking into honesty. Not anger, but relief in admitting the truth.
+Chorus: saying it is not happiness is where something real begins.`,
+
+`Theme: breaking out of the "always smile, be a good girl" rules. The fake happiness she wore in public finally cracks, and she lets her real self out.
+Scenes: a smile for the picture, a smile for the crowd, a mirror where she no longer recognizes herself, walls built inside her own head.
+Emotion: suppressed frustration exploding into liberation. Defiant and cathartic, never violent.
+Chorus: she will not smile on command anymore; right here she becomes herself.`,
+
+`Theme: lifting her head after a long hard season. She is not fully healed; she has simply stopped looking only at the ground.
+Scenes: sunlight filtering through leaves, light and shadow on the same path, wind she waits for, squinting at a slightly too-bright day.
+Emotion: gentle recovery. She does not have to choose only brightness; she can walk with her shadow.
+Chorus: walking into today, a little dazzled, shadow in tow.`,
+
+`Theme: a young night drive running from reality. There are no answers, but she keeps pressing the speed higher until sunrise.
+Scenes: earbuds in, the passenger seat, a sweaty shirt, city signals flashing past, a strangely white store light glowing in the quiet.
+Emotion: restless, reckless youth. Unfinished and noisy, but alive in this moment.
+Chorus: an English plea to the night not to let her down, then running through before morning comes.`,
+
+`Theme: good-mood trouble on a city night. Plans go sideways and nobody cares, because everyone is laughing.
+Scenes: a new spot, a glance that turns into a smile, one small spark flipping the whole night, the city getting brighter as the pace speeds up.
+Emotion: carefree, cheeky fun. No perfect ending, just something pretty.
+Chorus: turning one little night into a whole weekend.`,
+
+`Theme: accepting what she cannot see yet. Only a few words, sung like a mantra between the drops.
+Scenes: a dark horizon, a low voice, a hand reaching forward without knowing what is there.
+Emotion: calm acceptance fueling forward motion.
+Chorus: no sung chorus; the lead melody carries it, with the phrase "it is fine not to see it" in Japanese as the only hook.`,
+
+`Theme: the morning commute as a starting line. She plugs in her earbuds and turns an ordinary train ride into her own race.
+Scenes: a crowded platform, reflections in the train window, footsteps matching the beat, a city waking up.
+Emotion: sleepy to fired-up. Small courage for an ordinary day.
+Chorus: this moment is hers to run through.`,
+
+`Theme: deep focus at work, the world shrinking to one task. Pressure turns into speed.
+Scenes: a desk lamp, a deadline, keys clicking in rhythm, cold coffee forgotten, the last push before finishing.
+Emotion: tense, then flowing, then proud. Not stress, but momentum.
+Chorus: nothing can stop her while the beat keeps going.`,
+
+`Theme: a dawn highway drive after a long night of thinking. She leaves the old version of herself in the rear-view mirror.
+Scenes: an empty highway, a toll gate, the sky turning pale, window down, wind in her hair.
+Emotion: release and quiet excitement about what comes next.
+Chorus: accelerate into the morning, no turning back.`,
 ];
 
 const LYRICS_RATIOS = [

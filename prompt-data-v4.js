@@ -1,6 +1,7 @@
-// プロンプト候補データ。ここだけ編集して公開すると候補が更新されます。
+// V4 のプロンプト候補データ（StreetDanceEDM #07 / #08 の 14 曲）。
+// このファイルだけ編集すれば V4 の候補が更新されます。変更後はページを再読み込みしてください。
 // PATTERNS はベースパターンごとの候補、末尾の *_EXTRA 等は共通の追加候補です。
-// 変更後はページを再読み込みしてください。版番号の手動更新は不要です。
+(window.PROMPT_DATA = window.PROMPT_DATA || {}).v4 = (() => {
 
 // StreetDanceEDM #07 / #08 の Remove フォルダ 14 曲を 1 曲 1 ベースにしたもの。
 // BPM・キー・帯域バランス・音量推移・構成の山谷は librosa の実測値を優先し、
@@ -362,6 +363,10 @@ const GENRE_SWAPS = [
 "boss-battle synth rock", "dark progressive synth", "power-chord breakcore",
 ];
 
+// V1 / V2 と同じ古文フラグメント。V4 でもテーマに関わらず必ず入れる
+const CLASSICAL_FIXED =
+`Occasionally generate brief original classical-Japanese-style fragments fitting the scene and emotion. Blend naturally into modern Japanese. Do not quote existing works.`;
+
 // 全ベース共通・各 1 項目のみ
 const NEVER_USE_FIXED = "ネオン, 午前二時, 既読, 運命, 永遠, 奇跡, 桜, 星空, 翼, 涙が止まらない, 抱きしめて, 世界で一番, 未来へ, stay with me, forever, baby, neon, ignite, fly away.";
 const AVOID_FIXED = "Avoid: male vocal, duet, choir, metal screams or growls, thin weak low end, muddy mix, generic big-room festival drops, dubstep wobble, hardstyle kicks, rock band arrangement, orchestral cinematic scoring, acoustic ballad, overtuned robotic vocal, long fade-out.";
@@ -371,3 +376,16 @@ const BPM_EXTRA = [
 "BPM 161 (80 half-time feel), G minor.", "BPM 160 (80 half-time feel), F minor.", "BPM 158 (79 half-time feel), C# minor.", "BPM 130, C# minor.", "BPM 134, B major.",
 "BPM 136, D minor.", "BPM 120, D minor.",
 ];
+
+return {
+  reference: REFERENCE,
+  patterns: PATTERNS,
+  bpmExtra: BPM_EXTRA,
+  lyricsRatios: LYRICS_RATIOS,
+  genreSwaps: GENRE_SWAPS,
+  themes: THEME_EXTRA,
+  never: [NEVER_USE_FIXED],
+  avoid: [AVOID_FIXED],
+  classical: CLASSICAL_FIXED,
+};
+})();

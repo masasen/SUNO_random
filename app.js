@@ -1,20 +1,91 @@
 // ── 定数 ──
 
 const LIMIT = 3000;
-const STORE_KEY = "suno_simple_builder_v4";
-// データ内容から版を自動計算する。データファイルだけの更新でも保存済み候補を切り替える。
-function promptDataVersion() {
-  const content = JSON.stringify([REFERENCE, PATTERNS, THEME_EXTRA, LYRICS_RATIOS, GENRE_SWAPS, NEVER_USE_FIXED, AVOID_FIXED, BPM_EXTRA]);
-  let hash = 2166136261;
-  for (let i = 0; i < content.length; i++) hash = Math.imul(hash ^ content.charCodeAt(i), 16777619);
-  return "data-" + (hash >>> 0).toString(16).padStart(8, "0");
-}
-const DATA_VERSION = promptDataVersion();
-const LEGACY_DATA_VERSION = "data-78306033";
 const HISTORY_MAX = 20;
 const PRESET_MAX = 12;
 const NO_SWAP = "(置換しない)";
 const NO_CORE = "(Core sound を入れない)";
+const ACTIVE_VERSION_KEY = "suno_random_active_version";
+
+// ── 版の定義 ──
+// 候補データは prompt-data-v1〜v4.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
+
+const HINT_SLOT_NEVER_SETS = "1 行 1 候補（禁止語リストを丸ごと 1 行）。全テーマ共通で末尾から 2 番目に付きます。";
+const HINT_SLOT_AVOID_SETS = "1 行 1 候補。全テーマ共通で出力の最後に付きます。";
+const HINT_SLOT_NEVER_FIXED = "ベースに関わらず必ず入る禁止語リスト（全ベース共通・1 行）。行を増やすと候補としてランダム抽選されます。";
+const HINT_SLOT_AVOID_FIXED = "ベースに関わらず出力の最後に必ず付きます（全ベース共通・1 行）。行を増やすと候補としてランダム抽選されます。";
+const HINT_TRIM_SETS = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は念押し系（Keep …）→ 副次説明（Future Bass is secondary …）→ サンプリング指示の順に落とすので、Phase / Stage の記述は最後まで残ります。メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
+const HINT_TRIM_DJ = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
+const HINT_V12 = {
+  pattern: "prompt.md の 10 パターン。選ぶと BPM / メイン / Core sound / 補足 / Structure / ボーカル の各候補欄が、そのパターンの内容で先頭に差し込まれます（既存の候補は残ります）。",
+  bpm: "1 行 1 候補。生成時にランダムで 1 行選ばれます。",
+  genre: "メイン 1 行目の中の語を、下の候補からランダムに選んだ 1 語で置き換えます。例: <code>Future Bass</code> → <code>punk</code>。他の段落はそのまま流用されるので、曲の空気だけが強制的に変わります。",
+  core: "1 行 1 候補（長文 1 行）。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。No.5 / No.10 は Stage・Phase 記述がこの役割を兼ねるため、パターン選択時に自動でその行が入ります。",
+  extra: "サンプリング指示 / 質感指示 / Future Bass の扱い / Stage・Phase 記述。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは、ここが末尾の段落から順に削られます。",
+  theme: "Thema.md の 14 テーマを英訳したもの。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
+  never: HINT_SLOT_NEVER_SETS,
+  avoid: HINT_SLOT_AVOID_SETS,
+  trim: HINT_TRIM_SETS,
+  analysis: "",
+};
+const HINT_DJ = {
+  bpm: "1 行 1 候補。生成時にランダムで 1 行選ばれます。解析値（BPM とキー）をそのまま入れてあるので、完全模倣ならベースと同じ行を固定してください。",
+  core: "1 行 1 候補（長文 1 行）。キック・ベース・ハット・シンセの具体的な音作り。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。",
+  extra: "DJ サンプリング / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops の順に段落が削られ、Samples は最後まで残ります。",
+  never: HINT_SLOT_NEVER_FIXED,
+  avoid: HINT_SLOT_AVOID_FIXED,
+  trim: HINT_TRIM_DJ,
+};
+const DROP_ORDER_SETS = [/^keep\b/i, /^future bass (is|remains)\b/i, /sampl(e|ing)/i];
+// ドロップの作りが曲の芯なので、ミックス質感 → FX・トランジション → ドロップ、の順に落とす
+const DROP_ORDER_DJ = [/^mix\b/i, /^fx\b/i, /^drops?\b/i, /^samples?\b/i];
+
+const VERSIONS = [
+  {
+    id: "v1", badge: "V1 / SIMPLE MODE", bpmTitle: "BPM", swapFrom: "Future Bass", swapEnabled: true,
+    extrasFirst: true, dropOrder: DROP_ORDER_SETS, hints: HINT_V12,
+  },
+  {
+    id: "v2", badge: "V2 / SIMPLE MODE", bpmTitle: "BPM", swapFrom: "Future Bass", swapEnabled: true,
+    extrasFirst: true, dropOrder: DROP_ORDER_SETS, hints: HINT_V12,
+  },
+  {
+    id: "v3", badge: "V3 / STREET BASS × TRANCE BANGER", bpmTitle: "BPM・キー", swapFrom: "trance", swapEnabled: false,
+    extrasFirst: false, dropOrder: DROP_ORDER_DJ,
+    hints: Object.assign({}, HINT_DJ, {
+      pattern: "全ベースの土台は StreetDanceEDM#07「Glass Cherry Maze」の MP3 メタデータ準拠（half-time phonk × street dance / makina / G minor / 語りラップのヴァース / 叫ばないベルト。BPM のみ実測 184）。その上に「TRANCE × EDM BANGER Vol.31」の 10 曲（Tr.01〜Tr.10）の個性を載せ、競合する指定は土台を優先しています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ の各候補欄が、そのベースの内容で先頭に差し込まれます（既存の候補は残ります）。",
+      genre: "メイン 1 行目の中の語を、下の候補からランダムに選んだ 1 語で置き換えます。例: <code>trance</code> → <code>hard trance</code>。完全模倣が目的なので既定は OFF です。崩したいときだけ有効にしてください。",
+      theme: "V3（音源の歌詞書き起こし由来 10 ＋ 追加 3）と V2（Thema.md の 14 テーマ）を融合した候補。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。",
+      trim: HINT_TRIM_DJ.replace("テーマ・古文・", "テーマ・"),
+      analysis: "先頭は全ベースの土台「Glass Cherry Maze」（メタデータ準拠、参考に実測値）。続く 10 件は Vol.31（72:18、約 36:10 のセットが 2 周）前半 10 曲の解析値。いずれも librosa（BPM / キー / 帯域比 / ステレオ幅 / ピッチ推移）と Whisper（歌詞）で音源から直接測っています。",
+    }),
+  },
+  {
+    id: "v4", badge: "V4 / STREET DANCE EDM #07 × #08", bpmTitle: "BPM・キー", swapFrom: "street dance", swapEnabled: false,
+    extrasFirst: false, dropOrder: DROP_ORDER_DJ,
+    hints: Object.assign({}, HINT_DJ, {
+      pattern: "StreetDanceEDM #08 / #07 の Remove フォルダにある MP3 14 曲を、1 曲 1 ベースにしています。BPM・キー・帯域バランス・音量の山谷・終わり方は音源の実測値を優先し、実測で取れない声質・楽器の具体・ムード・歌詞テーマは MP3 のメタデータ（元プロンプト・歌詞）で補っています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ の各候補欄が、そのベースの内容で先頭に差し込まれます（既存の候補は残ります）。",
+      genre: "メイン 1 行目の中の語を、下の候補からランダムに選んだ 1 語で置き換えます。例: <code>street dance</code> → <code>jersey club</code>。完全模倣が目的なので既定は OFF です。崩したいときだけ有効にしてください。",
+      theme: "14 曲の歌詞メタデータから起こしたテーマ 14 ＋ 追加テーマ（共通モチーフ・ボス戦・旧 V1〜V3 の未収録分）。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
+      analysis: "先頭はデータ全体のまとめ。続く 14 件は各 MP3 の実測値（librosa: BPM / キー / 帯域比 / ステレオ幅 / H/P 比 / 2 秒窓の音量推移）と、それを補ったメタデータの要点です。",
+    }),
+  },
+];
+
+let version = null;
+let data = null;
+
+function storeKey() {
+  return "suno_simple_builder_" + version.id;
+}
+
+// データ内容から版を自動計算する。データファイルだけの更新でも保存済み候補を切り替える。
+function promptDataVersion() {
+  const content = JSON.stringify(data);
+  let hash = 2166136261;
+  for (let i = 0; i < content.length; i++) hash = Math.imul(hash ^ content.charCodeAt(i), 16777619);
+  return "data-" + (hash >>> 0).toString(16).padStart(8, "0");
+}
 
 // ── ユーティリティ ──
 
@@ -55,25 +126,33 @@ function esc(s) {
 // ── スロット定義 ──
 // kind: "line" = 1 行 1 候補 / "block" = 空行区切りで 1 候補
 
-const SLOT_KEYS = ["bpm", "main", "genre", "core", "extra", "structure", "vocal", "ratio", "theme"];
+const SLOT_KEYS = ["bpm", "main", "genre", "core", "extra", "structure", "vocal", "ratio", "theme", "never", "avoid"];
 
 const slots = {};
 
 function patternValues(key) {
-  return PATTERNS.map((p) => p[key]).filter(Boolean);
+  return data.patterns.map((p) => p[key]).filter(Boolean);
+}
+
+// パターン由来の候補と共通候補を合わせる。V1 / V2 は共通候補が先頭
+function mergedValues(key, extras) {
+  const own = patternValues(key);
+  return uniq(version.extrasFirst ? extras.concat(own) : own.concat(extras));
 }
 
 function defaultSources() {
   return {
-    bpm:       uniq(PATTERNS.map((p) => p.bpm).concat(BPM_EXTRA)).join("\n"),
-    main:      uniq(PATTERNS.map((p) => p.main)).join("\n"),
-    genre:     [NO_SWAP].concat(GENRE_SWAPS).join("\n"),
-    core:      uniq(PATTERNS.map((p) => p.core)).join("\n"),
-    extra:     uniq(PATTERNS.map((p) => p.extra)).join(BLOCK_SEP),
-    structure: uniq(PATTERNS.map((p) => p.structure)).join(BLOCK_SEP),
-    vocal:     uniq(PATTERNS.map((p) => p.vocal)).join(BLOCK_SEP),
-    ratio:     uniq(patternValues("ratio").concat(LYRICS_RATIOS)).join("\n"),
-    theme:     uniq(patternValues("theme").concat(THEME_EXTRA)).join(BLOCK_SEP),
+    bpm:       uniq(patternValues("bpm").concat(data.bpmExtra)).join("\n"),
+    main:      uniq(patternValues("main")).join("\n"),
+    genre:     [NO_SWAP].concat(data.genreSwaps).join("\n"),
+    core:      uniq(patternValues("core")).join("\n"),
+    extra:     uniq(patternValues("extra")).join(BLOCK_SEP),
+    structure: uniq(patternValues("structure")).join(BLOCK_SEP),
+    vocal:     uniq(patternValues("vocal")).join(BLOCK_SEP),
+    ratio:     mergedValues("ratio", data.lyricsRatios).join("\n"),
+    theme:     mergedValues("theme", data.themes).join(BLOCK_SEP),
+    never:     mergedValues("never", data.never).join("\n"),
+    avoid:     mergedValues("avoid", data.avoid).join("\n"),
   };
 }
 
@@ -121,6 +200,13 @@ function rollAll(respectPins) {
 function collectState() {
   for (const key of SLOT_KEYS) ensurePicked(key);
 
+  // 古文フラグメントがある版では、テーマの Chorus 行を古文指示の後ろへ回す
+  const classical = data.classical ? $("#classicalText").value.trim() : "";
+  const themeLines = slots.theme.picked ? slots.theme.picked.split("\n") : [];
+  const isChorus = (l) => /^chorus\s*:/i.test(l.trim());
+  const themeBody = classical ? themeLines.filter((l) => !isChorus(l)).join("\n").trim() : slots.theme.picked;
+  const chorus = classical ? themeLines.filter(isChorus).join("\n").trim() : "";
+
   const vocalLines = slots.vocal.picked ? slots.vocal.picked.split("\n") : [];
   const structureLines = slots.structure.picked ? slots.structure.picked.split("\n") : [];
 
@@ -132,9 +218,11 @@ function collectState() {
     structureLines,
     vocalLines,
     ratio: slots.ratio.picked,
-    theme: slots.theme.picked,
-    never: $("#neverText").value.trim(),
-    avoid: $("#avoidText").value.trim(),
+    themeBody,
+    classical,
+    chorus,
+    never: slots.never.picked,
+    avoid: slots.avoid.picked,
   };
 }
 
@@ -171,24 +259,17 @@ function assemble(state) {
   push(state.structureLines.join("\n"));
   push(state.vocalLines.join("\n"));
   push(state.ratio);
-  push(state.theme);
+  push(state.themeBody);
+  push(state.classical);
+  push(state.chorus);
   if (state.never) push("Never use:\n" + state.never);
   push(state.avoid);
 
   return paras.join("\n\n");
 }
 
-// サウンド補足の中でも落として影響が小さい順。
-// ドロップの作りが曲の芯なので、ミックス質感 → FX・トランジション → ドロップ、の順に落とす。
-const EXTRA_DROP_ORDER = [
-  /^mix\b/i,
-  /^fx\b/i,
-  /^drops?\b/i,
-  /^samples?\b/i,
-];
-
 function extraDropIndex(paras) {
-  for (const re of EXTRA_DROP_ORDER) {
+  for (const re of version.dropOrder) {
     const i = paras.findIndex((para) => re.test(para));
     if (i >= 0) return i;
   }
@@ -311,7 +392,8 @@ async function copyText(text) {
 
 const PATTERN_FIELDS = ["bpm", "main", "core", "extra", "structure", "vocal"];
 // パターンが持っている場合だけ差し替える。持たないパターンでは現在の選択を残す
-const PATTERN_OPTIONAL_FIELDS = ["ratio", "theme"];
+const PATTERN_OPTIONAL_FIELDS = ["ratio", "theme", "never", "avoid"];
+const FIELD_LABELS = { ratio: "Lyrics 比率", theme: "テーマ", never: "Never use", avoid: "Avoid" };
 
 function hoistCandidate(key, value) {
   if (!value) { setPicked(key, ""); return; }
@@ -331,25 +413,20 @@ function applyPattern(pattern) {
   for (const field of optional) hoistCandidate(field, pattern[field]);
   $$("#patternChips .chip").forEach((c) => c.classList.toggle("active", Number(c.dataset.id) === pattern.id));
   saveState();
-  const extraLabel = optional.length ? " / Lyrics 比率 / テーマ" : "";
-  setMsg(pattern.name + " を読み込みました。BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル" + extraLabel + " を差し替え済みです。", "ok");
+  const extraLabel = optional.map((f) => " / " + FIELD_LABELS[f]).join("");
+  setMsg(pattern.name + " を読み込みました。" + version.bpmTitle + " / メイン / Core sound / 補足 / Structure / ボーカル" + extraLabel + " を差し替え済みです。", "ok");
 }
 
 function renderPatternChips() {
-  const wrap = $("#patternChips");
-  wrap.innerHTML = PATTERNS.map((p) => '<button class="chip" data-id="' + p.id + '">' + esc(p.name) + "</button>").join("");
-  wrap.addEventListener("click", (e) => {
-    const chip = e.target.closest(".chip");
-    if (!chip) return;
-    const pattern = PATTERNS.find((p) => p.id === Number(chip.dataset.id));
-    if (pattern) applyPattern(pattern);
-  });
+  $("#patternChips").innerHTML = data.patterns.map((p) => '<button class="chip" data-id="' + p.id + '">' + esc(p.name) + "</button>").join("");
 }
 
 // ── 音源解析メモ ──
 
 function renderAnalysis() {
-  const rows = [{ name: REFERENCE.name, src: REFERENCE }].concat(PATTERNS);
+  $("#analysisCard").hidden = !data.reference;
+  if (!data.reference) { $("#analysisList").innerHTML = ""; return; }
+  const rows = [{ name: data.reference.name, src: data.reference }].concat(data.patterns.filter((p) => p.src));
   $("#analysisList").innerHTML = rows.map((p) =>
     '<div class="list-item">' +
       '<div class="meta"><span>' + esc(p.name) + "</span><span>" + esc(p.src.at) + "</span></div>" +
@@ -402,8 +479,7 @@ function currentSnapshot() {
   for (const key of SLOT_KEYS) { src[key] = slots[key].src.value; pins[key] = slots[key].pinned; }
   return {
     src, pins,
-    never: $("#neverText").value,
-    avoid: $("#avoidText").value,
+    classical: $("#classicalText").value,
     swapFrom: $("#swapFrom").value,
     swapEnabled: $("#swapEnabled").checked,
     swapAll: $("#swapAll").checked,
@@ -416,8 +492,11 @@ function restoreSnapshot(snap) {
     if (snap.src && typeof snap.src[key] === "string") slots[key].src.value = snap.src[key];
     if (snap.pins) setPin(key, !!snap.pins[key]);
   }
-  if (typeof snap.never === "string") $("#neverText").value = snap.never;
-  if (typeof snap.avoid === "string") $("#avoidText").value = snap.avoid;
+  // 切り替え導入前の V4 は Never use / Avoid を固定文として snap.never / snap.avoid に持っていた
+  for (const key of ["never", "avoid"]) {
+    if (typeof snap[key] === "string" && !(snap.src && typeof snap.src[key] === "string")) slots[key].src.value = snap[key];
+  }
+  if (data.classical && typeof snap.classical === "string") $("#classicalText").value = snap.classical;
   if (typeof snap.swapFrom === "string") $("#swapFrom").value = snap.swapFrom;
   if (typeof snap.swapEnabled === "boolean") $("#swapEnabled").checked = snap.swapEnabled;
   if (typeof snap.swapAll === "boolean") $("#swapAll").checked = snap.swapAll;
@@ -442,32 +521,35 @@ function renderPresets() {
 // ── 保存 / 復元 ──
 
 let saveTimer = 0;
+function saveNow() {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = 0; }
+  try {
+    localStorage.setItem(storeKey(), JSON.stringify({
+      dataVersion: promptDataVersion(),
+      snapshot: currentSnapshot(),
+      picked: SLOT_KEYS.reduce((acc, k) => (acc[k] = slots[k].picked, acc), {}),
+      output: $("#outputText").value,
+      autoTrim: $("#optAutoTrim").checked,
+      autoCopy: $("#optAutoCopy").checked,
+      history, presets,
+    }));
+  } catch { /* 容量超過などは黙って諦める */ }
+}
+
 function saveState() {
   if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({
-        dataVersion: DATA_VERSION,
-        snapshot: currentSnapshot(),
-        picked: SLOT_KEYS.reduce((acc, k) => (acc[k] = slots[k].picked, acc), {}),
-        output: $("#outputText").value,
-        autoTrim: $("#optAutoTrim").checked,
-        autoCopy: $("#optAutoCopy").checked,
-        history, presets,
-      }));
-    } catch { /* 容量超過などは黙って諦める */ }
-  }, 300);
+  saveTimer = setTimeout(saveNow, 300);
 }
 
 function loadState() {
   let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch { saved = null; }
+  try { saved = JSON.parse(localStorage.getItem(storeKey()) || "null"); } catch { saved = null; }
+  history = saved && Array.isArray(saved.history) ? saved.history : [];
+  presets = saved && Array.isArray(saved.presets) ? saved.presets : [];
   if (!saved) return false;
-  history = Array.isArray(saved.history) ? saved.history : [];
-  presets = Array.isArray(saved.presets) ? saved.presets : [];
   if (typeof saved.autoTrim === "boolean") $("#optAutoTrim").checked = saved.autoTrim;
   if (typeof saved.autoCopy === "boolean") $("#optAutoCopy").checked = saved.autoCopy;
-  if (saved.dataVersion !== DATA_VERSION && !(saved.dataVersion === 1 && DATA_VERSION === LEGACY_DATA_VERSION)) return false;
+  if (saved.dataVersion !== promptDataVersion()) return false;
   restoreSnapshot(saved.snapshot);
   if (saved.picked) for (const key of SLOT_KEYS) setPicked(key, saved.picked[key] || "");
   if (typeof saved.output === "string") $("#outputText").value = saved.output;
@@ -477,10 +559,9 @@ function loadState() {
 function loadDefaults() {
   const src = defaultSources();
   for (const key of SLOT_KEYS) { slots[key].src.value = src[key]; setPin(key, false); setPicked(key, ""); }
-  $("#neverText").value = NEVER_USE_FIXED;
-  $("#avoidText").value = AVOID_FIXED;
-  $("#swapFrom").value = "street dance";
-  $("#swapEnabled").checked = false;
+  $("#classicalText").value = data.classical || "";
+  $("#swapFrom").value = version.swapFrom;
+  $("#swapEnabled").checked = version.swapEnabled;
   $("#swapAll").checked = false;
 }
 
@@ -559,11 +640,26 @@ function bindEvents() {
     openSuno(text);
   });
 
-  $("#btnPatternRandom").addEventListener("click", () => applyPattern(pickOne(PATTERNS)));
+  $("#btnPatternRandom").addEventListener("click", () => applyPattern(pickOne(data.patterns)));
+
+  $("#patternChips").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    const pattern = data.patterns.find((p) => p.id === Number(chip.dataset.id));
+    if (pattern) applyPattern(pattern);
+  });
+
+  $("#versionSwitch").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-ver]");
+    if (!btn || btn.dataset.ver === version.id) return;
+    switchVersion(btn.dataset.ver);
+    setMsg(version.badge + " に切り替えました。", "ok");
+  });
 
   $("#btnReload").addEventListener("click", () => {
     if (!confirm("すべての候補テキストを初期値へ戻します。履歴とプリセットは残ります。よろしいですか？")) return;
     loadDefaults();
+    $$("#patternChips .chip").forEach((c) => c.classList.remove("active"));
     $("#outputText").value = "";
     $("#trimNote").textContent = "";
     updateMeter();
@@ -571,8 +667,7 @@ function bindEvents() {
     setMsg("初期値へ戻しました。", "ok");
   });
 
-  $("#neverText").addEventListener("input", saveState);
-  $("#avoidText").addEventListener("input", saveState);
+  $("#classicalText").addEventListener("input", saveState);
   $("#swapFrom").addEventListener("input", saveState);
   $("#swapEnabled").addEventListener("change", saveState);
   $("#swapAll").addEventListener("change", saveState);
@@ -655,15 +750,52 @@ function bindEvents() {
   });
 }
 
-function init() {
-  initSlots();
+// ── 版の切り替え ──
+// 版ごとに候補・選択・履歴・プリセットを別の保存キーで持ち、切り替え前の版は即座に保存する
+
+function applyVersionView() {
+  document.title = "SUNO Simple Prompt Builder " + version.id.toUpperCase();
+  $("#versionBadge").textContent = version.badge;
+  $$("#versionSwitch [data-ver]").forEach((b) => b.classList.toggle("active", b.dataset.ver === version.id));
+  $$("[data-hint]").forEach((el) => {
+    const html = version.hints[el.dataset.hint];
+    el.innerHTML = html || "";
+    el.hidden = !html;
+  });
+  $('[data-title="bpm"]').textContent = version.bpmTitle;
+  $("#classicalCard").hidden = !data.classical;
+  // 非表示のカードを飛ばして左列の番号を振り直す
+  let n = 0;
+  $$(".col-left .card").forEach((card) => {
+    const num = $(".card-head .num", card);
+    if (num && !card.hidden) num.textContent = String(n++).padStart(2, "0");
+  });
+}
+
+function switchVersion(id) {
+  if (version) saveNow();
+  version = VERSIONS.find((v) => v.id === id) || VERSIONS[VERSIONS.length - 1];
+  data = window.PROMPT_DATA[version.id];
+  try { localStorage.setItem(ACTIVE_VERSION_KEY, version.id); } catch { /* noop */ }
+
+  applyVersionView();
   renderPatternChips();
   renderAnalysis();
+  for (const key of SLOT_KEYS) { setPin(key, false); setPicked(key, ""); }
+  $("#outputText").value = "";
+  $("#trimNote").textContent = "";
   if (!loadState()) loadDefaults();
-  bindEvents();
   renderHistory();
   renderPresets();
   updateMeter();
+}
+
+function init() {
+  initSlots();
+  bindEvents();
+  let saved = "";
+  try { saved = localStorage.getItem(ACTIVE_VERSION_KEY) || ""; } catch { saved = ""; }
+  switchVersion(saved);
   setMsg("パターンを選ぶか、そのまま「ランダム生成」を押してください。⌘/Ctrl + Enter でランダム生成、⌘/Ctrl + S で生成。", "info");
 }
 

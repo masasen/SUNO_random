@@ -60,7 +60,7 @@ test("ヘッダーに V1〜V4 の切り替えボタンがあり、初回は V4",
 const CASES = [
   { id: "v1", chips: 10, classical: true, analysis: false },
   { id: "v2", chips: 11, classical: true, analysis: false },
-  { id: "v3", chips: 10, classical: false, analysis: true },
+  { id: "v3", chips: 10, classical: true, analysis: true },
   { id: "v4", chips: 14, classical: true, analysis: true },
 ];
 
@@ -116,5 +116,56 @@ test("版ごとに状態を保存し、戻ると復元される", async () => {
   assert.equal(await page.inputValue("#outputText"), v4);
   await useVersion(page, "v1");
   assert.equal(await page.inputValue("#outputText"), v1);
+  await page.close();
+});
+
+async function slotSource(page, key) {
+  return page.inputValue('[data-slot="' + key + '"] [data-src]');
+}
+
+test("歌詞テーマは全版で V4 と同じ候補を使う", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v4");
+  const v4 = await slotSource(page, "theme");
+  for (const id of ["v1", "v2", "v3"]) {
+    await useVersion(page, id);
+    assert.equal(await slotSource(page, "theme"), v4, id + " の歌詞テーマ候補");
+  }
+  await page.close();
+});
+
+test("Never use / Avoid は V1 / V2 も V4 と同じ共通 1 行、V3 は専用の 1 行", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v4");
+  const never = await slotSource(page, "never");
+  const avoid = await slotSource(page, "avoid");
+  assert.equal(never.split("\n").length, 1);
+  assert.equal(avoid.split("\n").length, 1);
+  for (const id of ["v1", "v2"]) {
+    await useVersion(page, id);
+    assert.equal(await slotSource(page, "never"), never, id + " の Never use");
+    assert.equal(await slotSource(page, "avoid"), avoid, id + " の Avoid");
+    const chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
+    for (const chip of chips) {
+      await page.click('#patternChips .chip[data-id="' + chip + '"]');
+      assert.equal(await slotSource(page, "never"), never, id + " のパターン " + chip + " 選択後も Never use は共通");
+      assert.equal(await slotSource(page, "avoid"), avoid, id + " のパターン " + chip + " 選択後も Avoid は共通");
+    }
+  }
+  await useVersion(page, "v3");
+  assert.equal((await slotSource(page, "never")).split("\n").length, 1);
+  assert.notEqual(await slotSource(page, "never"), never);
+  await page.close();
+});
+
+test("古文フラグメントの文面は全版で共通", async () => {
+  const { page } = await openPage();
+  const texts = [];
+  for (const id of ["v1", "v2", "v3", "v4"]) {
+    await useVersion(page, id);
+    texts.push(await page.inputValue("#classicalText"));
+  }
+  assert.ok(texts[0].includes(CLASSICAL));
+  assert.deepEqual(new Set(texts).size, 1);
   await page.close();
 });

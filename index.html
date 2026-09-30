@@ -26,6 +26,8 @@
 
 * { box-sizing: border-box; }
 
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -346,6 +348,32 @@ textarea:focus, input[type="text"]:focus {
 
 textarea::placeholder { color: var(--fg-faint); }
 
+/* ── 版の切り替え ── */
+
+.ver-switch {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+.ver-switch button {
+  font: 700 12px/1 var(--mono);
+  letter-spacing: .06em;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--fg-dim);
+}
+.ver-switch button:hover { color: var(--fg); background: var(--surface-2); }
+.ver-switch button.active {
+  color: var(--fg);
+  background: linear-gradient(135deg, rgba(70, 226, 255, .24), rgba(255, 77, 157, .24));
+  border-color: rgba(70, 226, 255, .6);
+}
+
 /* ── パターンチップ ── */
 
 .chips { display: flex; flex-wrap: wrap; gap: 7px; }
@@ -467,7 +495,13 @@ textarea::placeholder { color: var(--fg-faint); }
   <div class="head-inner">
     <div class="title-row">
       <h1><span class="mark"></span>SUNO Simple Prompt Builder</h1>
-      <span class="badge">V4 / STREET DANCE EDM #07 × #08</span>
+      <span class="badge" id="versionBadge">V4 / STREET DANCE EDM #07 × #08</span>
+      <div class="ver-switch" id="versionSwitch" role="group" aria-label="プロンプトの版">
+        <button data-ver="v1">V1</button>
+        <button data-ver="v2">V2</button>
+        <button data-ver="v3">V3</button>
+        <button data-ver="v4">V4</button>
+      </div>
       <div class="actions">
         <button class="btn-primary" id="btnGenerate">生成</button>
         <button class="btn-accent" id="btnRandomGen">🎲 ランダム生成</button>
@@ -494,19 +528,19 @@ textarea::placeholder { color: var(--fg-faint); }
           <button class="icon-btn" id="btnPatternRandom" title="パターンをランダム選択">🎲</button>
         </div>
       </div>
-      <p class="hint">StreetDanceEDM #08 / #07 の Remove フォルダにある MP3 14 曲を、1 曲 1 ベースにしています。BPM・キー・帯域バランス・音量の山谷・終わり方は音源の実測値を優先し、実測で取れない声質・楽器の具体・ムード・歌詞テーマは MP3 のメタデータ（元プロンプト・歌詞）で補っています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ の各候補欄が、そのベースの内容で先頭に差し込まれます（既存の候補は残ります）。</p>
+      <p class="hint" data-hint="pattern">StreetDanceEDM #08 / #07 の Remove フォルダにある MP3 14 曲を、1 曲 1 ベースにしています。BPM・キー・帯域バランス・音量の山谷・終わり方は音源の実測値を優先し、実測で取れない声質・楽器の具体・ムード・歌詞テーマは MP3 のメタデータ（元プロンプト・歌詞）で補っています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ の各候補欄が、そのベースの内容で先頭に差し込まれます（既存の候補は残ります）。</p>
       <div class="chips" id="patternChips"></div>
     </section>
 
     <section class="card" data-slot="bpm" data-kind="line">
       <div class="card-head">
-        <h2><span class="num">01</span>BPM・キー</h2>
+        <h2><span class="num">01</span><span data-title="bpm">BPM・キー</span></h2>
         <div class="card-tools">
           <button class="icon-btn" data-pin title="固定（ランダム生成でも変えない）">🔓</button>
           <button class="icon-btn" data-dice title="この項目だけランダム再抽選">🎲</button>
         </div>
       </div>
-      <p class="hint">1 行 1 候補。生成時にランダムで 1 行選ばれます。解析値（BPM とキー）をそのまま入れてあるので、完全模倣ならベースと同じ行を固定してください。</p>
+      <p class="hint" data-hint="bpm">1 行 1 候補。生成時にランダムで 1 行選ばれます。解析値（BPM とキー）をそのまま入れてあるので、完全模倣ならベースと同じ行を固定してください。</p>
       <div class="picked empty" data-picked>未選択</div>
       <textarea data-src rows="4"></textarea>
     </section>
@@ -532,9 +566,9 @@ textarea::placeholder { color: var(--fg-faint); }
           <button class="icon-btn" data-dice title="ランダム再抽選">🎲</button>
         </div>
       </div>
-      <p class="hint">メイン 1 行目の中の語を、下の候補からランダムに選んだ 1 語で置き換えます。例: <code>street dance</code> → <code>jersey club</code>。完全模倣が目的なので既定は OFF です。崩したいときだけ有効にしてください。</p>
+      <p class="hint" data-hint="genre">メイン 1 行目の中の語を、下の候補からランダムに選んだ 1 語で置き換えます。例: <code>street dance</code> → <code>jersey club</code>。完全模倣が目的なので既定は OFF です。崩したいときだけ有効にしてください。</p>
       <div class="swap-row">
-        <input type="text" id="swapFrom" placeholder="置換元（例: street dance）" />
+        <input type="text" id="swapFrom" placeholder="置換元" />
       </div>
       <div class="check-row">
         <label class="check"><input type="checkbox" id="swapEnabled" /><span>置換を有効にする</span></label>
@@ -552,7 +586,7 @@ textarea::placeholder { color: var(--fg-faint); }
           <button class="icon-btn" data-dice title="ランダム再抽選">🎲</button>
         </div>
       </div>
-      <p class="hint">1 行 1 候補（長文 1 行）。キック・ベース・ハット・シンセの具体的な音作り。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。</p>
+      <p class="hint" data-hint="core">1 行 1 候補（長文 1 行）。キック・ベース・ハット・シンセの具体的な音作り。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。</p>
       <div class="picked empty" data-picked>未選択</div>
       <textarea data-src rows="6"></textarea>
     </section>
@@ -565,7 +599,7 @@ textarea::placeholder { color: var(--fg-faint); }
           <button class="icon-btn" data-dice title="ランダム再抽選">🎲</button>
         </div>
       </div>
-      <p class="hint">DJ サンプリング / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops の順に段落が削られ、Samples は最後まで残ります。</p>
+      <p class="hint" data-hint="extra">DJ サンプリング / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops の順に段落が削られ、Samples は最後まで残ります。</p>
       <div class="picked empty" data-picked>未選択</div>
       <textarea data-src rows="9"></textarea>
     </section>
@@ -617,21 +651,41 @@ textarea::placeholder { color: var(--fg-faint); }
           <button class="icon-btn" data-dice title="ランダム再抽選">🎲</button>
         </div>
       </div>
-      <p class="hint">14 曲の歌詞メタデータから起こしたテーマ 14 ＋ 共通モチーフの追加 2。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。</p>
+      <p class="hint" data-hint="theme">14 曲の歌詞メタデータから起こしたテーマ 14 ＋ 共通モチーフの追加 2。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。</p>
       <div class="picked empty" data-picked>未選択</div>
       <textarea data-src rows="14"></textarea>
     </section>
 
-    <section class="card">
-      <div class="card-head"><h2><span class="num">10</span>Never use（全ベース共通・1 項目）</h2></div>
-      <p class="hint">ベースに関わらず必ず 1 行だけ入る禁止語リスト。ランダム抽選はしません。文面だけ編集できます。</p>
-      <textarea id="neverText" rows="3"></textarea>
+    <section class="card" id="classicalCard">
+      <div class="card-head"><h2><span class="num">10</span>古文フラグメント（常時固定）</h2></div>
+      <p class="hint">テーマに関わらず必ず出力へ入ります（V1 / V2 / V4）。テーマの <code>Chorus:</code> 行はこの指示の後ろへ回されます。文面だけ編集できます。</p>
+      <textarea id="classicalText" rows="4"></textarea>
     </section>
 
-    <section class="card">
-      <div class="card-head"><h2><span class="num">11</span>Avoid（全ベース共通・1 項目）</h2></div>
-      <p class="hint">ベースに関わらず必ず 1 行だけ出力の最後に付きます。ランダム抽選はしません。文面だけ編集できます。</p>
-      <textarea id="avoidText" rows="3"></textarea>
+    <section class="card" data-slot="never" data-kind="line">
+      <div class="card-head">
+        <h2><span class="num">11</span>Never use</h2>
+        <div class="card-tools">
+          <button class="icon-btn" data-pin title="固定">🔓</button>
+          <button class="icon-btn" data-dice title="ランダム再抽選">🎲</button>
+        </div>
+      </div>
+      <p class="hint" data-hint="never"></p>
+      <div class="picked empty" data-picked>未選択</div>
+      <textarea data-src rows="4"></textarea>
+    </section>
+
+    <section class="card" data-slot="avoid" data-kind="line">
+      <div class="card-head">
+        <h2><span class="num">12</span>Avoid</h2>
+        <div class="card-tools">
+          <button class="icon-btn" data-pin title="固定">🔓</button>
+          <button class="icon-btn" data-dice title="ランダム再抽選">🎲</button>
+        </div>
+      </div>
+      <p class="hint" data-hint="avoid"></p>
+      <div class="picked empty" data-picked>未選択</div>
+      <textarea data-src rows="4"></textarea>
     </section>
 
   </div>
@@ -658,14 +712,14 @@ textarea::placeholder { color: var(--fg-faint); }
         <label class="check"><input type="checkbox" id="optAutoTrim" checked /><span>3000 文字を超えたら自動で削る</span></label>
         <label class="check"><input type="checkbox" id="optAutoCopy" checked /><span>生成と同時にコピー</span></label>
       </div>
-      <p class="hint">自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。</p>
+      <p class="hint" data-hint="trim">自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。</p>
     </section>
 
-    <section class="card">
+    <section class="card" id="analysisCard">
       <div class="card-head">
         <h2><span class="num">♪</span>音源解析メモ</h2>
       </div>
-      <p class="hint">先頭はデータ全体のまとめ。続く 14 件は各 MP3 の実測値（librosa: BPM / キー / 帯域比 / ステレオ幅 / H/P 比 / 2 秒窓の音量推移）と、それを補ったメタデータの要点です。</p>
+      <p class="hint" data-hint="analysis">先頭はデータ全体のまとめ。続く 14 件は各 MP3 の実測値（librosa: BPM / キー / 帯域比 / ステレオ幅 / H/P 比 / 2 秒窓の音量推移）と、それを補ったメタデータの要点です。</p>
       <div class="list" id="analysisList"></div>
     </section>
 
@@ -695,26 +749,25 @@ textarea::placeholder { color: var(--fg-faint); }
   </div>
 </main>
 <script>
-// 更新直後も最新の候補データを取得する。HTMLは画面、app.jsは処理、prompt-data.jsは候補データ。
-const dataScript = document.createElement("script");
-dataScript.src = "./prompt-data.js?v=" + Date.now();
+// 更新直後も最新の候補データを取得する。HTMLは画面、app.jsは処理、prompt-data-v1〜v4.jsは各版の候補データ。
+const DATA_FILES = ["prompt-data-v1.js", "prompt-data-v2.js", "prompt-data-v3.js", "prompt-data-v4.js"];
 function showLoadError(file) {
   const message = document.querySelector("#msg");
   message.textContent = file + " を読み込めません。ページを再読み込みしてください。";
   message.classList.add("error");
 }
-dataScript.onerror = () => showLoadError("prompt-data.js");
-dataScript.onload = () => {
-  if (typeof PATTERNS === "undefined" || !Array.isArray(PATTERNS)) {
-    showLoadError("prompt-data.js");
-    return;
-  }
-  const appScript = document.createElement("script");
-  appScript.src = "./app.js";
-  appScript.onerror = () => showLoadError("app.js");
-  document.body.appendChild(appScript);
-};
-document.head.appendChild(dataScript);
+function loadScript(file) {
+  return new Promise((resolve, reject) => {
+    const el = document.createElement("script");
+    el.src = "./" + file + "?v=" + Date.now();
+    el.onload = resolve;
+    el.onerror = () => reject(file);
+    document.head.appendChild(el);
+  });
+}
+Promise.all(DATA_FILES.map(loadScript))
+  .then(() => loadScript("app.js"))
+  .catch(showLoadError);
 </script>
 </body>
 </html>

@@ -79,8 +79,8 @@ for (const c of CASES) {
       assert.match(out, /Never use:\n/);
       assert.match(out, /Avoid:/);
       if (c.classical) {
-        const chorus = out.search(/^Chorus:/m);
-        if (chorus >= 0) assert.ok(chorus > out.indexOf(CLASSICAL), "Chorus 行は古文指示の後ろ");
+        const themeToClassical = out.slice(out.indexOf("Theme:"), out.indexOf(CLASSICAL));
+        assert.doesNotMatch(themeToClassical, /^Chorus:/m, "テーマの Chorus 行は古文指示の後ろ");
       }
     }
     assert.deepEqual(errors, []);

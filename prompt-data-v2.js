@@ -1,5 +1,6 @@
 // V2 のプロンプト候補データ（V1 ＋ 追加パターン 1 件）。
 // このファイルだけ編集すれば V2 の候補が更新されます。変更後はページを再読み込みしてください。
+// 歌詞テーマ・古文フラグメント・Never use / Avoid は prompt-data-v4.js を全版共通で使う（V3 の Never use / Avoid は専用）。
 (window.PROMPT_DATA = window.PROMPT_DATA || {}).v2 = (() => {
 
 const PATTERNS = [
@@ -103,89 +104,8 @@ const PATTERNS = [
     vocal: "ONE Japanese female vocalist only, early 20s. Bright candy-sweet tone with a bratty bite, crisp consonants and light pitch-correction sheen.\nWhisper → sing-song talk-rap → fast clipped rap → confident chant → bratty shout peak.\nNo male voice, duet, choir, growl or scream.",
     ratio: "Lyrics: English-main 70% with Japanese 30%, natural code-switching within lines.",
     theme: "Theme: a girl everyone underestimates because she looks sweet — she flips it and owns the night on her own terms.\nScenes: rain on a crosswalk, glitter on scuffed sneakers, a mirror check before walking in, a cracked phone screen still glowing, a whole room turning around when she arrives.\nEmotion: playful confidence and defiance rather than anger. Sweet outside, unshakable inside.\nChorus: a short chantable title phrase repeated, then the reveal of what hides under the sweet surface.",
-    never: "ネオン, 午前二時, 既読, コンビニ, 愛してる, 通知, 深夜, キャンディ, リボン, stay with me, neon, digital, glitch, pixel, cyber, error, system, reboot, code, data, princess, queen, vibe, ignite.",
-    avoid: "Avoid: lo-fi, boom bap, soft ballad, acoustic guitar, rock band, metal, big-room EDM, dreamy trance, orchestral sound, slow tempo, male rap.",
   },
 ];
-
-// Thema.md の 14 テーマを英訳したもの。空行区切りで 1 テーマ。
-// Never use の禁止語（ネオン / 既読 / 通知 / 深夜 / 午前二時 / コンビニ）と
-// ぶつかる場面語は、英語側でも意図的に外してある。
-const THEME_BLOCKS = [
-`Theme: dark-cute love. She wants to look adorable, but her inner world is unstable and she cannot hide how much she depends on him. The relationship is not broken yet, just slightly unsafe, a little short of lovers.
-Scenes: her room, the mirror, unfinished makeup, a reply that never comes, the way home, a phone she keeps turning over, small private city moments.
-Emotion: sweetness mixed with impatience, jealousy, possessiveness and unease. Wording is a little calculated and a little toxic, but never too heavy. No horror imagery and no explicit violence.
-Chorus: short strong phrases repeated until they become addictive.`,
-
-`Theme: yami-kawaii love written pop. The weight is there, but it never turns dark. Cuteness, dependence, selfishness, anxiety and loneliness stay balanced.
-Scenes: an ordinary room, a mirror, a small gift, the walk home, waiting for an answer, a day that feels too long.
-Emotion: clingy but bright, sulky, needy, easily hurt. Use everyday words, never clinical or explanatory. Keep it pop and catchy.
-Chorus: one short line that sticks after a single listen, repeated.`,
-
-`Theme: grown-up cute love. She looks composed, but in front of him she cannot stay honest. They are just before becoming lovers, or already together while she pretends to be at ease.
-Scenes: a city view, the walk back from work, a cafe, a taxi, perfume, a jacket left behind, messages traded across a screen.
-Emotion: elegant, lightly teasing, shy, pretending to have room to spare while her real feelings shake. Avoid girlish speech and heavy slang.
-Chorus: adult and lingering, but still easy to hum.`,
-
-`Theme: a slightly sensual grown-up cute love. Poise, composure and playful games on the surface, loneliness underneath.
-Scenes: the end of a long day, a quiet bar, a coat, a window above the city, a hand almost taken, the walk to the station.
-Emotion: natural adult warmth rather than forced cuteness. Two sides at once: confident outside, unsteady inside.
-Chorus: sweet, memorable and softly repeated.`,
-
-`Theme: yandere love. She is far too devoted to one person and can no longer hide the weight of it. Unrequited or established, the fear of losing him sits at the center.
-Scenes: her room, the hours of waiting, a promise, a familiar route, a place full of memories, an object he left behind.
-Emotion: devotion, anxiety, possessiveness and weakening reason. Never explain madness directly; show it as quiet, heavy attachment. No crime or violence imagery.
-Chorus: short, strong feelings repeated with rising intensity.`,
-
-`Theme: yandere love that still keeps its cuteness. Heavy affection, loneliness and possessiveness carried in words that sound sweet.
-Scenes: her room, a promise, a saved message, a shared seat, the road they always walked.
-Emotion: earnest and fragile rather than frightening. Desperate love, never a threat.
-Chorus: an addictive short phrase repeated until it aches.`,
-
-`Theme: tsundere love. She is stubborn, cannot be honest, and keeps missing her own timing while trying to hide her feelings. They are close, but one step short.
-Scenes: a classroom or a street, a cafe, short messages, small misunderstandings, ordinary days.
-Emotion: embarrassment, pride, jealousy and the cuteness of a hidden truth. A little sharp, never cruel. Avoid loud anime clichés.
-Chorus: the one place where her real feelings leak out, just a little.`,
-
-`Theme: adult tsundere love. Not childish sharpness, but pretended composure, light jokes, deflection and clumsiness at showing anything real.
-Scenes: after work, a quiet street, a shared drink, an unsent message, the last train home.
-Emotion: guarded, teasing and quietly warm. Honesty arrives only once.
-Chorus: the moment she finally stops pretending.`,
-
-`Theme: the love life of a working woman in the city. She is capable and rational at work but a little fragile in love. Office romance, an ex, or something undefined — keep the distance realistic.
-Scenes: the commute, the office, lunch, the walk home after overtime, the last train, a Friday evening, a wine glass, messages traded slowly.
-Emotion: tiredness, hope, something she cannot give up on, a trace of warmth and a trace of loneliness. Adult natural wording with real daily texture.
-Chorus: unpretentious but memorable adult feeling.`,
-
-`Theme: the ordinary days and quiet love of a working adult woman. Nothing dramatic, just real life.
-Scenes: a morning train, a desk, a coffee gone cold, the walk home, a shared umbrella, a weekend that ends too fast.
-Emotion: a little tired, a little hopeful, a small flutter. Do not stack office jargon; keep the love inside daily life.
-Chorus: soft, natural and easy to sing.`,
-
-`Theme: a one-sided love that grows a little bigger on every ordinary day.
-Scenes: a glance, a short conversation, a message typed and deleted, the walk home, the same seat every week.
-Emotion: no grand destiny — small events swelling into something she cannot hold. Natural, singable Japanese.
-Chorus: simple, warm and rising.`,
-
-`Theme: two people who love each other but keep missing each other.
-Scenes: small everyday gaps, a call that ends too early, a plan postponed again, the same room holding two different silences.
-Emotion: loneliness rather than anger. The distance widens through tiny misalignments.
-Chorus: what stays unsaid, and what she still means.`,
-
-`Theme: the vague distance with someone she cannot forget after the end.
-Scenes: an old route, a saved photo, a familiar station, a message she keeps rewriting, a place they used to share.
-Emotion: lingering attachment, pride, memory, and knowing she should not look yet looking anyway. Adult and never over-explained.
-Chorus: restrained, with the truth sitting just underneath.`,
-
-`Theme: the small happiness of a day when love is going well.
-Scenes: morning light, a breakfast for two, a walk with no destination, a hand held on an ordinary street.
-Emotion: no big drama — an ordinary day that looks slightly special. Gentle, natural and easy to hum.
-Chorus: bright, simple and warm.`,
-];
-
-// テーマに関わらず必ず入れる固定文
-const CLASSICAL_FIXED =
-`Occasionally generate brief original classical-Japanese-style fragments fitting the scene and emotion. Blend naturally into modern Japanese. Do not quote existing works.`;
 
 const LYRICS_RATIOS = [
 "Lyrics: Japanese 60-70%, short natural English 30-40%.",
@@ -207,23 +127,6 @@ const GENRE_SWAPS = [
 "city pop", "shoegaze", "ska punk", "disco funk", "jungle",
 ];
 
-const NEVER_USE_SETS = [
-"ネオン, 午前二時, 既読, コンビニ, 愛してる, 通知, 深夜, べつに, ねえ, 噛んで, キャンディ, リボン, 離れないで, 行かないで, あなたがほしい, 離さない, stay with me, 消えないで.",
-"ネオン, 午前二時, 既読, 通知, コンビニ, 深夜, 愛してる, 運命, 永遠, 儚い, 雨上がり, 離さない, 行かないで, stay with me, don't go, forever.",
-"既読, 通知, 深夜, 午前二時, ネオン, コンビニ, 愛してる, 世界で一番, 涙が止まらない, 壊れそう, 離れないで, stay with me, I need you.",
-"ネオン, 午前二時, 既読, 通知, 深夜, コンビニ, 愛してる, さよなら, 桜, 星空, 奇跡, 抱きしめて, 離さない, forever, baby, stay with me.",
-"ネオン, 午前二時, 既読, 通知, 深夜, コンビニ, 愛してる, 消えないで, 離さない, 行かないで, キャンディ, リボン, stay with me, only you, my everything.",
-];
-
-const AVOID_SETS = [
-"Avoid: big-room EDM, progressive house, tropical house, dreamy trance, cinematic orchestration, rock guitars, metal, hardstyle dominance.",
-"Avoid: festival big-room, progressive house, dreamy trance, orchestral cinematic sound, guitars, metal, hardstyle dominance.",
-"Avoid: big-room EDM, tropical house, progressive house, dreamy trance, cinematic orchestration, rock and metal.",
-"Avoid: pop-rock guitars, metal, cinematic scoring, tropical house, progressive house, modern festival big-room.",
-"Avoid: modern hardstyle dominance, big-room EDM, progressive house, dreamy trance, guitars, metal, orchestral sound.",
-"Avoid: dark underground psytrance dominance, big-room EDM, dreamy trance, cinematic orchestration, rock, metal.",
-];
-
 const BPM_EXTRA = [
 "BPM 150-160.", "BPM 155-165.", "BPM 160-170.", "BPM 165-175.", "BPM 170-180.",
 ];
@@ -233,9 +136,5 @@ return {
   bpmExtra: BPM_EXTRA,
   lyricsRatios: LYRICS_RATIOS,
   genreSwaps: GENRE_SWAPS,
-  themes: THEME_BLOCKS,
-  never: NEVER_USE_SETS,
-  avoid: AVOID_SETS,
-  classical: CLASSICAL_FIXED,
 };
 })();

@@ -363,3 +363,17 @@ test("V5 は全ベースの Core sound に 8bit / 16bit / FM 音源 / 90 年代 
   }
   await page.close();
 });
+
+test("V5 の歌詞テーマは寂しさ・哀愁が漂う方向だけで、明るい方向のテーマを含まない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  const themes = (await slotSource(page, "theme")).split(/^---$/m).map((t) => t.trim());
+  assert.equal(themes.length, 10);
+  for (const t of themes) {
+    const emotion = (t.match(/^Emotion: (.+)$/m) || [])[1] || "";
+    assert.match(emotion, /lonely|loneliness|wistful|melancholy|melancholic|aching|longing|sorrow|forlorn|desolate|hollow/i, "Emotion が寂しさ・哀愁: " + emotion);
+    assert.doesNotMatch(t, /cheerful|thrilled|giddy|\bjoy|glee|playful|euphori|triumph|\bfun\b|celebrat|grin|laugh|excited|unbothered/i, "明るい方向の語なし: " + t.slice(0, 60));
+  }
+  await page.close();
+});
+

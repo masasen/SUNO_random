@@ -47,12 +47,12 @@ async function randomOutput(page) {
   return page.inputValue("#outputText");
 }
 
-test("ヘッダーに V1〜V4 の切り替えボタンがあり、初回は V4", async () => {
+test("ヘッダーに V1〜V5 の切り替えボタンがあり、初回は V5", async () => {
   const { page, errors } = await openPage();
   const labels = await page.$$eval("#versionSwitch [data-ver]", (els) => els.map((e) => e.textContent.trim()));
-  assert.deepEqual(labels, ["V1", "V2", "V3", "V4"]);
-  assert.match(await page.textContent("#versionBadge"), /^V4/);
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 14);
+  assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5"]);
+  assert.match(await page.textContent("#versionBadge"), /^V5/);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 10);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -62,6 +62,7 @@ const CASES = [
   { id: "v2", chips: 11, classical: true, analysis: false },
   { id: "v3", chips: 10, classical: true, analysis: true },
   { id: "v4", chips: 14, classical: true, analysis: true },
+  { id: "v5", chips: 10, classical: true, analysis: false },
 ];
 
 for (const c of CASES) {
@@ -160,7 +161,7 @@ test("Never use は V1 / V2 も V4 と共通、Avoid は V4 から hardstyle / d
   await page.close();
 });
 
-test("古文フラグメントの文面は全版で共通", async () => {
+test("古文フラグメントの文面は V1〜V4 で共通、V5 は日本語で書かせる専用文面", async () => {
   const { page } = await openPage();
   const texts = [];
   for (const id of ["v1", "v2", "v3", "v4"]) {
@@ -169,5 +170,104 @@ test("古文フラグメントの文面は全版で共通", async () => {
   }
   assert.ok(texts[0].includes(CLASSICAL));
   assert.deepEqual(new Set(texts).size, 1);
+  await useVersion(page, "v5");
+  const v5 = await page.inputValue("#classicalText");
+  assert.ok(v5.includes(CLASSICAL));
+  assert.notEqual(v5, texts[0]);
+  assert.match(v5, /in Japanese/);
+  await page.close();
+});
+
+// ── V5: makina ベースのコール＆レスポンス ──
+
+const V5_GENRE = "makina";
+
+async function v5Chips(page) {
+  return page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
+}
+
+async function generateWithPattern(page, id) {
+  await page.click('#patternChips .chip[data-id="' + id + '"]');
+  for (const key of ["bpm", "main", "core", "extra", "structure", "vocal", "ratio", "theme"]) {
+    await page.click('[data-slot="' + key + '"] [data-dice]');
+  }
+  await page.click("#btnGenerate");
+  return page.inputValue("#outputText");
+}
+
+test("V5 はジャンル名をメイン 1 か所にだけ書き、置換を既定で有効にする", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  assert.equal(await page.inputValue("#swapFrom"), V5_GENRE);
+  assert.equal(await page.isChecked("#swapEnabled"), true);
+  await page.uncheck("#swapEnabled");
+  for (const id of await v5Chips(page)) {
+    const out = await generateWithPattern(page, id);
+    const hits = out.match(new RegExp(V5_GENRE, "gi")) || [];
+    assert.equal(hits.length, 1, "パターン " + id + " のジャンル名は 1 回だけ: " + hits.length);
+    assert.match(out, new RegExp("^Main genre: " + V5_GENRE + "\\.", "m"), "パターン " + id + " のメイン行");
+  }
+  await page.close();
+});
+
+test("V5 のジャンル置換で曲全体のジャンルが 1 語で入れ替わる", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  await page.check("#swapEnabled");
+  await page.fill('[data-slot="genre"] [data-src]', "jersey club");
+  for (const id of (await v5Chips(page)).slice(0, 3)) {
+    const out = await generateWithPattern(page, id);
+    assert.match(out, /^Main genre: jersey club\./m);
+    assert.doesNotMatch(out, new RegExp(V5_GENRE, "i"));
+  }
+  await page.close();
+});
+
+test("V5 は全パターンでサビを最初のヴァースより前に置く", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  for (const id of await v5Chips(page)) {
+    await page.click('#patternChips .chip[data-id="' + id + '"]');
+    const blocks = (await slotSource(page, "structure")).split(/^---$/m);
+    const s = blocks[0];
+    const chorus = s.search(/^(Chorus|Hook)\b/m);
+    const verse = s.search(/^Verse\b/m);
+    assert.ok(chorus >= 0 && verse >= 0 && chorus < verse, "パターン " + id + " はサビが先");
+  }
+  await page.close();
+});
+
+test("V5 の出力は英語メイン・コール＆レスポンス入りで、作品名やアーティスト名を含まない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  for (let i = 0; i < 20; i++) {
+    const out = await randomOutput(page);
+    assert.match(out, /^Lyrics: English[- ]main 8\d%|^Lyrics: English 8\d%|^Lyrics: English 9\d%/m, "英語メインの比率");
+    assert.match(out, /call[- ]and[- ]response/i, "コール＆レスポンス");
+    assert.doesNotMatch(out, /final fantasy|live a live|beatmania|m-flo|megalovania|megalomania/i, "固有名詞なし");
+  }
+  await page.close();
+});
+
+test("V5 は男女掛け合いと女性ソロの両方のボーカル候補を持ち、Avoid で男性ボーカルを禁じない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  const vocal = await slotSource(page, "vocal");
+  assert.match(vocal, /male rapper/i);
+  assert.match(vocal, /^ONE .*female vocalist/m);
+  assert.doesNotMatch(await slotSource(page, "avoid"), /male vocal/i);
+  await page.close();
+});
+
+test("V5 の歌詞テーマ・Never use は V4 と別の専用候補", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v4");
+  const v4Themes = (await slotSource(page, "theme")).split(/^---$/m).map((t) => t.trim());
+  const v4Never = await slotSource(page, "never");
+  await useVersion(page, "v5");
+  const v5Themes = (await slotSource(page, "theme")).split(/^---$/m).map((t) => t.trim());
+  assert.ok(v5Themes.length >= 10, "V5 のテーマ数: " + v5Themes.length);
+  assert.equal(v5Themes.filter((t) => v4Themes.includes(t)).length, 0);
+  assert.notEqual(await slotSource(page, "never"), v4Never);
   await page.close();
 });

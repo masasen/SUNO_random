@@ -72,15 +72,14 @@ const VERSIONS = [
     }),
   },
   {
-    id: "v5", badge: "V5 / MAKINA CALL & RESPONSE", bpmTitle: "BPM・キー", swapFrom: "makina", swapEnabled: true,
+    id: "v5", badge: "V5 / 5 鍵 1st〜5thMIX LINEUP", bpmTitle: "BPM", swapFrom: "", swapEnabled: false,
     extrasFirst: false, dropOrder: DROP_ORDER_V5, ownLyrics: true,
     hints: Object.assign({}, HINT_DJ, {
-      pattern: "makina を土台に、JRPG の戦闘曲・音ゲーのブレイクビーツ・2000 年代 J-club のラップ×歌・DJ スクラッチを掛け合わせた 10 ベース。どのベースもサビを最初のヴァースより前に置いています。コール＆レスポンスは入れず、ラップはメロディー感のある melodic rap だけです。SUNO が固有名詞を弾くため、作品名・アーティスト名は書かず音の特徴で指定しています。",
-      genre: "ジャンル名はメイン 1 行目の <code>Main genre: makina.</code> の 1 か所だけにあり、他の段落は <code>the main genre</code> で指しています。この 1 語を下の候補からランダムに選んだ 1 語で置き換えると、曲全体がそのジャンルを土台に組み直されます。既定で ON です。",
-      extra: "DJ サンプリング / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops の順に段落が削られ、Samples は最後まで残ります。",
-      theme: "V5 専用のテーマ 10 件。闇かわいい・ツンデレ・ヤンデレ・病み寄りの女性像を寂しさ・哀愁の方向で、感情だけを抽象的に指定し、具体的な歌詞の文言・場面・フックは SUNO 側に任せてランダム性を持たせています。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
-      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。",
-      analysis: "",
+      pattern: "5 鍵アーケードの初代〜5thMIX（1st / 2nd / 3rd / complete / 4th / 5th）で新規収録された 95 曲を、1 曲 1 ベースにしています。ジャンル表記と BPM は当時の曲リストどおり、楽器・構成は曲ごとの公開情報がないためジャンル系統ごとの当時の定番の音で組み立てています。ボーカルは男性・女性・インストが混在します。曲名・アーティスト名は出力に入れません。選ぶと各候補欄の先頭にそのベースの内容が差し込まれます。",
+      genre: "メイン 1 行目の <code>Genre: ○○.</code> の語を置き換えます。完全模倣が目的なので既定は OFF です。崩したいときだけ、置換元にメイン行のジャンル表記（例: <code>HOUSE</code>）を入れて有効にしてください。",
+      theme: "V5 専用のテーマ。ジャンル系統ごとの情景と感情だけを抽象的に指定し、歌詞の文言は SUNO 側に任せます。インストのベースでは曲の空気づけにだけ使われます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
+      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Samples の順に落とします。BPM / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。",
+      analysis: "先頭はラインナップ全体のまとめ。続く 95 件は各ベースの元曲（作品・ジャンル表記・BPM・曲名・名義）です。曲名・名義はこの欄だけに表示し、出力には入れません。",
     }),
   },
 ];

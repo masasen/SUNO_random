@@ -178,7 +178,7 @@ test("古文フラグメントの文面は V1〜V4 で共通、V5 は日本語�
   await page.close();
 });
 
-// ── V5: makina ベースのコール＆レスポンス ──
+// ── V5: makina ベース ──
 
 const V5_GENRE = "makina";
 
@@ -237,6 +237,8 @@ test("V5 は全パターンでサビを最初のヴァースより前に置く",
   await page.close();
 });
 
+const CALL_RESPONSE = /call[- ]and[- ]response|call & response|\banswer(s|ed|ing)?\b|shouts? (it )?back|crowd (shouts?|answers?|chants?)|hype[- ]?man/i;
+
 const V5_RATIOS = [
   "Lyrics: English 70-80%, Japanese for the rest.",
   "Lyrics: Japanese 70-80%, English for the rest.",
@@ -261,13 +263,13 @@ test("V5 の出力は歌詞の文言を引用符で指定せず、SUNO 側に任
   await page.close();
 });
 
-test("V5 の出力はコール＆レスポンス入りで、作品名やアーティスト名を含まない", async () => {
+test("V5 の出力はコール＆レスポンスを含まず、作品名やアーティスト名も含まない", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   for (let i = 0; i < 20; i++) {
     const out = await randomOutput(page);
     assert.ok(V5_RATIOS.some((r) => out.includes(r)), "言語比率は 3 パターンのどれか");
-    assert.match(out, /call[- ]and[- ]response/i, "コール＆レスポンス");
+    assert.doesNotMatch(out, CALL_RESPONSE, "コール＆レスポンスなし");
     assert.doesNotMatch(out, /final fantasy|live a live|beatmania|m-flo|megalovania|megalomania/i, "固有名詞なし");
   }
   await page.close();
@@ -316,5 +318,30 @@ test("V5 の歌詞テーマは闇かわいい・ツンデレ・ヤンデレ系�
   assert.match(all, /yami-kawaii/i);
   assert.doesNotMatch(all, /\b(boss|combo|game|dungeon|gauge|stage|continue|press start|quest|level|player|chapter)\b/i);
   for (const t of themes) assert.match(t, /^Chorus: .+/m, "各テーマに Chorus 行");
+  await page.close();
+});
+
+test("V5 は全候補からコール＆レスポンスを消している", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  for (const key of ["main", "core", "extra", "structure", "vocal", "theme", "avoid"]) {
+    assert.doesNotMatch(await slotSource(page, key), CALL_RESPONSE, key + " にコール＆レスポンスなし");
+  }
+  assert.doesNotMatch(await page.inputValue("#classicalText"), CALL_RESPONSE, "古文指示にコール＆レスポンスなし");
+  await page.close();
+});
+
+test("V5 のラップはメロディー感のあるラップだけを指定する", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  for (const key of ["structure", "vocal"]) {
+    const src = await slotSource(page, key);
+    const raps = src.match(/(\S+ )?rap\b/gi) || [];
+    assert.ok(raps.length > 0, key + " にラップ指定がある");
+    for (const r of raps) assert.match(r, /^melodic rap$/i, key + " のラップは melodic rap: " + r);
+  }
+  const vocals = (await slotSource(page, "vocal")).split(/^---$/m);
+  for (const v of vocals) assert.match(v, /melodic rap/i);
+  assert.match(await slotSource(page, "avoid"), /spoken rap/i);
   await page.close();
 });

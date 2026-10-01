@@ -271,3 +271,17 @@ test("V5 の歌詞テーマ・Never use は V4 と別の専用候補", async () 
   assert.notEqual(await slotSource(page, "never"), v4Never);
   await page.close();
 });
+
+test("V5 の歌詞テーマは闇かわいい・ツンデレ・ヤンデレ系の 10 件で、ゲーム寄りの語を含まない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  const themes = (await slotSource(page, "theme")).split(/^---$/m).map((t) => t.trim());
+  assert.equal(themes.length, 10);
+  const all = themes.join("\n");
+  assert.match(all, /tsundere/i);
+  assert.match(all, /yandere/i);
+  assert.match(all, /yami-kawaii/i);
+  assert.doesNotMatch(all, /\b(boss|combo|game|dungeon|gauge|stage|continue|press start|quest|level|player|chapter)\b/i);
+  for (const t of themes) assert.match(t, /^Chorus: .+/m, "各テーマに Chorus 行");
+  await page.close();
+});

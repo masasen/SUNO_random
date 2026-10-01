@@ -1,11 +1,11 @@
 # SUNO_random
 
-SUNO Simple Prompt Builder V1〜V4 の GitHub Pages 公開用リポジトリです。画面上部の `V1` / `V2` / `V3` / `V4` ボタンで、使うプロンプト候補を切り替えます。
+SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリです。画面上部の `V1` / `V2` / `V3` / `V4` / `V5` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V5 です。
 
 ## ファイルの役割
 
 - `index.html`: 画面の外枠とスタイル。候補データの更新時は編集不要です。
-- `prompt-data-v1.js` 〜 `prompt-data-v4.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
+- `prompt-data-v1.js` 〜 `prompt-data-v5.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
 - `app.js`: 版の切り替え、ランダム抽選、組み立て、保存などの処理。版ごとの説明文・ジャンル置換の既定値・自動トリムで削る順もここにあります。
 - `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。
 
@@ -17,8 +17,16 @@ SUNO Simple Prompt Builder V1〜V4 の GitHub Pages 公開用リポジトリで�
 | V2 | V1 ＋ 追加パターン 1 件 | Never use は V4 と共通、Avoid は専用の 1 行 | なし |
 | V3 | Glass Cherry Maze を土台に TRANCE × EDM BANGER Vol.31 の 10 曲 | V3 専用の 1 行 | あり |
 | V4 | StreetDanceEDM #07 / #08 の 14 曲 | 共通の 1 行 | あり |
+| V5 | makina × JRPG 戦闘曲 / 音ゲーのブレイクビーツ / J-club ラップ×歌 / DJ スクラッチの 10 ベース | V5 専用の 1 行 | なし |
 
-歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として全版で共通です。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
+歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4 で共通です。V5 は歌詞テーマ・古文フラグメント（日本語で書かせる文面）・Never use・Avoid をすべて `prompt-data-v5.js` に専用で持ちます。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
+
+## V5 の書き方
+
+- どのベースもサビ（Chorus）を最初の Verse より前に置き、コール＆レスポンスを必ず入れます。
+- ジャンル名は `main` 先頭の `Main genre: makina.` の 1 か所だけに書き、他の段落は `the main genre` で指します。ジャンル置換（V5 は既定で ON）の 1 語だけで曲全体が入れ替わります。
+- SUNO が固有名詞を弾くため、作品名・アーティスト名は書かず音の特徴で指定します。
+- 歌詞は英語メイン（80〜90%）、日本語は古文フラグメントだけです。
 
 ## 候補データの更新
 

@@ -17,17 +17,17 @@ SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリで�
 | V2 | V1 ＋ 追加パターン 1 件 | Never use は V4 と共通、Avoid は専用の 1 行 | なし |
 | V3 | Glass Cherry Maze を土台に TRANCE × EDM BANGER Vol.31 の 10 曲 | V3 専用の 1 行 | あり |
 | V4 | StreetDanceEDM #07 / #08 の 14 曲 | 共通の 1 行 | あり |
-| V5 | 5 鍵アーケード初代〜5thMIX の新規収録 95 曲（1 曲 1 ベース） | V5 専用の 1 行 | あり（元曲メモ） |
+| V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4 で共通です。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
 ## V5 の書き方
 
-- 5 鍵アーケードの初代・2ndMIX・3rdMIX・completeMIX・4thMIX・5thMIX で新規収録された 95 曲を 1 曲 1 ベースにしています（リバイバルは除く）。
-- `prompt-data-v5.js` の `SONGS` が 1 行 1 曲の表です。ジャンル表記・BPM は当時の曲リスト（bm5keys-forever.com / zakugiri.com）どおり、楽器・構成・テーマは `FAMILIES`（ジャンル系統）ごとの当時の定番の音から組み立てます。
-- ボーカルは男性・女性・インストが混在します。歌詞の文言は指定せず SUNO 側に任せます。古文フラグメントは使いません。
-- 曲名・アーティスト名・作品名は出力に入れず、音源解析メモ欄だけに表示します。固有名詞を含むジャンル表記（DANCEMANIA / KONAMIX）は出力で EURODANCE / RETRO GAME REMIX に置き換えます。
-- 完全模倣が目的なのでジャンル置換は既定で OFF です。
+- 全 12 ベースのメイン行は `Genre: Glitchcore hip-hop. Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.` で始まり、後ろにベースごとの味付け（hyperpop / breakcore / jersey club / phonk / chiptune など）が付きます。メイン行は自動トリムで削られないので、どの出力にも必ず入ります。
+- ボーカルは全ベースで sweet Lolita の女性 1 人の速いラップです（Avoid で男性ボーカルを禁止）。BPM は 145〜185 です。
+- 言語比率は「英語 70-80%＋残り日本語」「日本語 70-80%＋残り英語」「1 小節内で日英ミックス」の 3 パターンです。
+- 歌詞の文言は指定せず、テーマは情景と感情だけを書いて SUNO 側に任せます。古文フラグメントは使いません。
+- ジャンル置換はメイン行先頭の `Glitchcore hip-hop` だけを入れ替えます（既定 OFF）。
 
 ## 候補データの更新
 

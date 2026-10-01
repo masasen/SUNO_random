@@ -270,7 +270,7 @@ test("V5 の出力はコール＆レスポンスを含まず、作品名やア�
     const out = await randomOutput(page);
     assert.ok(V5_RATIOS.some((r) => out.includes(r)), "言語比率は 3 パターンのどれか");
     assert.doesNotMatch(out, CALL_RESPONSE, "コール＆レスポンスなし");
-    assert.doesNotMatch(out, /final fantasy|live a live|beatmania|m-flo|megalovania|megalomania/i, "固有名詞なし");
+    assert.doesNotMatch(out, /final fantasy|live a live|beatmania|m-flo|megalovania|megalomania|pc-?98|pc-?9821|\bnec\b|yamaha|ym2608|opna/i, "固有名詞なし");
   }
   await page.close();
 });
@@ -343,5 +343,23 @@ test("V5 のラップはメロディー感のあるラップだけを指定す�
   const vocals = (await slotSource(page, "vocal")).split(/^---$/m);
   for (const v of vocals) assert.match(v, /melodic rap/i);
   assert.match(await slotSource(page, "avoid"), /spoken rap/i);
+  await page.close();
+});
+
+test("V5 は全ベースの Core sound に 8bit / 16bit / FM 音源 / 90 年代 PC サウンドボードの質感を入れる", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  const cores = (await slotSource(page, "core")).split("\n").map((c) => c.trim()).filter(Boolean);
+  assert.equal(cores.length, 10);
+  for (const c of cores) {
+    assert.match(c, /\bFM\b/, "FM 音源: " + c.slice(0, 40));
+    assert.match(c, /8-bit/, "8bit: " + c.slice(0, 40));
+    assert.match(c, /16-bit/, "16bit: " + c.slice(0, 40));
+    assert.match(c, /sound[- ]board/i, "サウンドボード: " + c.slice(0, 40));
+  }
+  for (let i = 0; i < 10; i++) {
+    const out = await randomOutput(page);
+    assert.match(out, /sound[- ]board/i, "出力に必ずサウンドボードの質感が入る");
+  }
   await page.close();
 });

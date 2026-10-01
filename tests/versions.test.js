@@ -237,25 +237,58 @@ test("V5 は全パターンでサビを最初のヴァースより前に置く",
   await page.close();
 });
 
-test("V5 の出力は英語メイン・コール＆レスポンス入りで、作品名やアーティスト名を含まない", async () => {
+const V5_RATIOS = [
+  "Lyrics: English 70-80%, Japanese for the rest.",
+  "Lyrics: Japanese 70-80%, English for the rest.",
+  "Lyrics: Japanese and English mixed inside every bar, switching mid-line in the 2000s J-club rap-pop style.",
+];
+
+test("V5 の言語比率は英語メイン / 日本語メイン / 1 小節内ミックスの 3 パターンだけ", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  assert.deepEqual((await slotSource(page, "ratio")).split("\n").sort(), [...V5_RATIOS].sort());
+  await page.close();
+});
+
+test("V5 の出力は歌詞の文言を引用符で指定せず、SUNO 側に任せる", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  for (const key of ["structure", "theme", "extra", "vocal"]) {
+    assert.doesNotMatch(await slotSource(page, key), /["“”]/, key + " に引用符の歌詞指定がない");
+  }
+  const themes = (await slotSource(page, "theme")).split(/^---$/m);
+  for (const t of themes) assert.doesNotMatch(t, /^Scenes:/m, "テーマは具体的な場面を列挙しない");
+  await page.close();
+});
+
+test("V5 の出力はコール＆レスポンス入りで、作品名やアーティスト名を含まない", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   for (let i = 0; i < 20; i++) {
     const out = await randomOutput(page);
-    assert.match(out, /^Lyrics: English[- ]main 8\d%|^Lyrics: English 8\d%|^Lyrics: English 9\d%/m, "英語メインの比率");
+    assert.ok(V5_RATIOS.some((r) => out.includes(r)), "言語比率は 3 パターンのどれか");
     assert.match(out, /call[- ]and[- ]response/i, "コール＆レスポンス");
     assert.doesNotMatch(out, /final fantasy|live a live|beatmania|m-flo|megalovania|megalomania/i, "固有名詞なし");
   }
   await page.close();
 });
 
-test("V5 は男女掛け合いと女性ソロの両方のボーカル候補を持ち、Avoid で男性ボーカルを禁じない", async () => {
+test("V5 のボーカルは 40 代女性の whisper-to-scream だけで、男性は出さない", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
-  const vocal = await slotSource(page, "vocal");
-  assert.match(vocal, /male rapper/i);
-  assert.match(vocal, /^ONE .*female vocalist/m);
-  assert.doesNotMatch(await slotSource(page, "avoid"), /male vocal/i);
+  const vocals = (await slotSource(page, "vocal")).split(/^---$/m).map((v) => v.trim());
+  assert.equal(vocals.length, 10);
+  for (const v of vocals) {
+    assert.match(v, /^ONE female vocalist in her 40s only/, "40 代女性 1 人");
+    assert.match(v, /whisper-to-scream/i);
+    assert.doesNotMatch(v, /\b(rapper|duo|he|his)\b/i, "男性パートなし");
+  }
+  const avoid = await slotSource(page, "avoid");
+  assert.match(avoid, /\bmale vocal/i);
+  assert.doesNotMatch(avoid, /whisper|scream/i, "whisper / scream を Avoid で禁じない");
+  for (const key of ["extra", "structure", "main"]) {
+    assert.doesNotMatch(await slotSource(page, key), /\b(rapper|hype man|duo)\b/i, key + " に男性パートなし");
+  }
   await page.close();
 });
 

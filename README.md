@@ -25,6 +25,7 @@ SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリで�
 
 - どのベースもサビ（Chorus）を最初の Verse より前に置きます。コール＆レスポンスは入れず、ラップはメロディー感のある melodic rap だけを指定します（Avoid で monotone spoken rap を禁止）。
 - ジャンル名は `main` 先頭の `Main genre: makina.` の 1 か所だけに書き、他の段落は `the main genre` で指します。ジャンル置換（V5 は既定で ON）の 1 語だけで曲全体が入れ替わります。
+- 全ベースの Core sound に 90 年代の国産 PC サウンドボード感（4 オペレーター FM 音源・8bit の矩形波・16bit サンプリング）を入れています。機種名・チップ名は書きません。
 - SUNO が固有名詞を弾くため、作品名・アーティスト名は書かず音の特徴で指定します。
 - Structure と歌詞テーマには具体的な歌詞の文言を書かず（引用符で語を指定しない）、言葉選びは SUNO 側に任せます。
 - ボーカルは全ベース 40 代女性 1 人の whisper-to-scream で、男性パートはありません（Avoid で男性ボーカルを禁止）。

@@ -41,6 +41,8 @@ const HINT_DJ = {
 const DROP_ORDER_SETS = [/^keep\b/i, /^future bass (is|remains)\b/i, /sampl(e|ing)/i];
 // ドロップの作りが曲の芯なので、ミックス質感 → FX・トランジション → ドロップ、の順に落とす
 const DROP_ORDER_DJ = [/^mix\b/i, /^fx\b/i, /^drops?\b/i, /^samples?\b/i];
+// V5 はコール＆レスポンスが曲の芯なので最後まで残す
+const DROP_ORDER_V5 = [/^mix\b/i, /^drops?\b/i, /^samples?\b/i, /^call\b/i];
 
 const VERSIONS = [
   {
@@ -69,14 +71,30 @@ const VERSIONS = [
       analysis: "先頭はデータ全体のまとめ。続く 14 件は各 MP3 の実測値（librosa: BPM / キー / 帯域比 / ステレオ幅 / H/P 比 / 2 秒窓の音量推移）と、それを補ったメタデータの要点です。",
     }),
   },
+  {
+    id: "v5", badge: "V5 / MAKINA CALL & RESPONSE", bpmTitle: "BPM・キー", swapFrom: "makina", swapEnabled: true,
+    extrasFirst: false, dropOrder: DROP_ORDER_V5, ownLyrics: true,
+    hints: Object.assign({}, HINT_DJ, {
+      pattern: "makina を土台に、JRPG の戦闘曲・音ゲーのブレイクビーツ・2000 年代 J-club のラップ×歌・DJ スクラッチを掛け合わせた 10 ベース。どのベースもサビを最初のヴァースより前に置き、コール＆レスポンスを必ず入れています。SUNO が固有名詞を弾くため、作品名・アーティスト名は書かず音の特徴で指定しています。",
+      genre: "ジャンル名はメイン 1 行目の <code>Main genre: makina.</code> の 1 か所だけにあり、他の段落は <code>the main genre</code> で指しています。この 1 語を下の候補からランダムに選んだ 1 語で置き換えると、曲全体がそのジャンルを土台に組み直されます。既定で ON です。",
+      extra: "コール＆レスポンス / DJ サンプリング / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops → Samples の順に段落が削られ、Call & response は最後まで残ります。",
+      theme: "V5 専用のテーマ（10 ベース分 ＋ 追加 4）。英語メインで盛り上がる場面を選んでいます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
+      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops → Samples の順に落とすので、Call & response は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。",
+      analysis: "",
+    }),
+  },
 ];
 
 let version = null;
 let data = null;
 
-// 版のデータに V4 の共通データを重ねる。版が自前で持つ Never use / Avoid（V3 の両方、V1 / V2 の Avoid）はそちらを優先する
+// 版のデータに V4 の共通データを重ねる。版が自前で持つ Never use / Avoid（V3 の両方、V1 / V2 の Avoid）はそちらを優先する。
+// ownLyrics の版（V5）は歌詞テーマ・古文も自前のものだけを使う
 function resolveData(id) {
   const own = window.PROMPT_DATA[id];
+  if (VERSIONS.find((v) => v.id === id).ownLyrics) {
+    return Object.assign({}, own, { themes: uniq(own.patterns.map((p) => p.theme).filter(Boolean).concat(own.themes)) });
+  }
   const shared = window.PROMPT_DATA[SHARED_SOURCE];
   return Object.assign({}, own, {
     themes: uniq(shared.patterns.map((p) => p.theme).filter(Boolean).concat(shared.themes)),

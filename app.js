@@ -41,8 +41,8 @@ const HINT_DJ = {
 const DROP_ORDER_SETS = [/^keep\b/i, /^future bass (is|remains)\b/i, /sampl(e|ing)/i];
 // ドロップの作りが曲の芯なので、ミックス質感 → FX・トランジション → ドロップ、の順に落とす
 const DROP_ORDER_DJ = [/^mix\b/i, /^fx\b/i, /^drops?\b/i, /^samples?\b/i];
-// V5 は DJ サンプリングを最後まで残す
-const DROP_ORDER_V5 = [/^mix\b/i, /^drops?\b/i, /^samples?\b/i];
+// V5 はグリッチ処理を最後まで残す
+const DROP_ORDER_V5 = [/^mix\b/i, /^drops?\b/i, /^glitch\b/i];
 
 const VERSIONS = [
   {
@@ -72,14 +72,15 @@ const VERSIONS = [
     }),
   },
   {
-    id: "v5", badge: "V5 / 5 鍵 1st〜5thMIX LINEUP", bpmTitle: "BPM", swapFrom: "", swapEnabled: false,
+    id: "v5", badge: "V5 / GLITCHCORE × SWEET LOLITA", bpmTitle: "BPM・キー", swapFrom: "Glitchcore hip-hop", swapEnabled: false,
     extrasFirst: false, dropOrder: DROP_ORDER_V5, ownLyrics: true,
     hints: Object.assign({}, HINT_DJ, {
-      pattern: "5 鍵アーケードの初代〜5thMIX（1st / 2nd / 3rd / complete / 4th / 5th）で新規収録された 95 曲を、1 曲 1 ベースにしています。ジャンル表記と BPM は当時の曲リストどおり、楽器・構成は曲ごとの公開情報がないためジャンル系統ごとの当時の定番の音で組み立てています。ボーカルは男性・女性・インストが混在します。曲名・アーティスト名は出力に入れません。選ぶと各候補欄の先頭にそのベースの内容が差し込まれます。",
-      genre: "メイン 1 行目の <code>Genre: ○○.</code> の語を置き換えます。完全模倣が目的なので既定は OFF です。崩したいときだけ、置換元にメイン行のジャンル表記（例: <code>HOUSE</code>）を入れて有効にしてください。",
-      theme: "V5 専用のテーマ。ジャンル系統ごとの情景と感情だけを抽象的に指定し、歌詞の文言は SUNO 側に任せます。インストのベースでは曲の空気づけにだけ使われます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
-      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Samples の順に落とします。BPM / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。",
-      analysis: "先頭はラインナップ全体のまとめ。続く 95 件は各ベースの元曲（作品・ジャンル表記・BPM・曲名・名義）です。曲名・名義はこの欄だけに表示し、出力には入れません。",
+      pattern: "全 12 ベースのメイン行が <code>Glitchcore hip-hop. Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.</code> で始まり、後ろにベースごとの味付け（hyperpop / breakcore / jersey club / phonk / chiptune など）が付きます。メイン行は削られないので、どの出力にもこのスタイル文が必ず入ります。",
+      genre: "メイン行先頭の <code>Glitchcore hip-hop</code> だけを、下の候補からランダムに選んだ 1 語で置き換えます。既定は OFF です。",
+      extra: "グリッチ処理 / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops の順に段落が削られ、Glitch FX は最後まで残ります。",
+      theme: "V5 専用のテーマ 12 件。情景と感情だけを抽象的に指定し、歌詞の文言は SUNO 側に任せます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
+      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、Glitch FX は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。",
+      analysis: "",
     }),
   },
 ];

@@ -41,8 +41,8 @@ const HINT_DJ = {
 const DROP_ORDER_SETS = [/^keep\b/i, /^future bass (is|remains)\b/i, /sampl(e|ing)/i];
 // ドロップの作りが曲の芯なので、ミックス質感 → FX・トランジション → ドロップ、の順に落とす
 const DROP_ORDER_DJ = [/^mix\b/i, /^fx\b/i, /^drops?\b/i, /^samples?\b/i];
-// V5 はコール＆レスポンスが曲の芯なので最後まで残す
-const DROP_ORDER_V5 = [/^mix\b/i, /^drops?\b/i, /^samples?\b/i, /^call\b/i];
+// V5 は DJ サンプリングを最後まで残す
+const DROP_ORDER_V5 = [/^mix\b/i, /^drops?\b/i, /^samples?\b/i];
 
 const VERSIONS = [
   {
@@ -75,11 +75,11 @@ const VERSIONS = [
     id: "v5", badge: "V5 / MAKINA CALL & RESPONSE", bpmTitle: "BPM・キー", swapFrom: "makina", swapEnabled: true,
     extrasFirst: false, dropOrder: DROP_ORDER_V5, ownLyrics: true,
     hints: Object.assign({}, HINT_DJ, {
-      pattern: "makina を土台に、JRPG の戦闘曲・音ゲーのブレイクビーツ・2000 年代 J-club のラップ×歌・DJ スクラッチを掛け合わせた 10 ベース。どのベースもサビを最初のヴァースより前に置き、コール＆レスポンスを必ず入れています。SUNO が固有名詞を弾くため、作品名・アーティスト名は書かず音の特徴で指定しています。",
+      pattern: "makina を土台に、JRPG の戦闘曲・音ゲーのブレイクビーツ・2000 年代 J-club のラップ×歌・DJ スクラッチを掛け合わせた 10 ベース。どのベースもサビを最初のヴァースより前に置いています。コール＆レスポンスは入れず、ラップはメロディー感のある melodic rap だけです。SUNO が固有名詞を弾くため、作品名・アーティスト名は書かず音の特徴で指定しています。",
       genre: "ジャンル名はメイン 1 行目の <code>Main genre: makina.</code> の 1 か所だけにあり、他の段落は <code>the main genre</code> で指しています。この 1 語を下の候補からランダムに選んだ 1 語で置き換えると、曲全体がそのジャンルを土台に組み直されます。既定で ON です。",
-      extra: "コール＆レスポンス / DJ サンプリング / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops → Samples の順に段落が削られ、Call & response は最後まで残ります。",
-      theme: "V5 専用のテーマ 10 件。闇かわいい・ツンデレ・ヤンデレ・病み寄りの女性像と感情だけを抽象的に指定し、具体的な歌詞の文言・場面・フックは SUNO 側に任せてランダム性を持たせています。各 Chorus はコール＆レスポンス型です。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
-      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops → Samples の順に落とすので、Call & response は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。",
+      extra: "DJ サンプリング / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops の順に段落が削られ、Samples は最後まで残ります。",
+      theme: "V5 専用のテーマ 10 件。闇かわいい・ツンデレ・ヤンデレ・病み寄りの女性像と感情だけを抽象的に指定し、具体的な歌詞の文言・場面・フックは SUNO 側に任せてランダム性を持たせています。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
+      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。",
       analysis: "",
     }),
   },

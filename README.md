@@ -23,7 +23,7 @@ SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリで�
 
 ## V5 の書き方
 
-- どのベースもサビ（Chorus）を最初の Verse より前に置き、コール＆レスポンスを必ず入れます。
+- どのベースもサビ（Chorus）を最初の Verse より前に置きます。コール＆レスポンスは入れず、ラップはメロディー感のある melodic rap だけを指定します（Avoid で monotone spoken rap を禁止）。
 - ジャンル名は `main` 先頭の `Main genre: makina.` の 1 か所だけに書き、他の段落は `the main genre` で指します。ジャンル置換（V5 は既定で ON）の 1 語だけで曲全体が入れ替わります。
 - SUNO が固有名詞を弾くため、作品名・アーティスト名は書かず音の特徴で指定します。
 - Structure と歌詞テーマには具体的な歌詞の文言を書かず（引用符で語を指定しない）、言葉選びは SUNO 側に任せます。

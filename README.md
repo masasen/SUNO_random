@@ -23,12 +23,13 @@ SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリで�
 
 ## V5 の書き方
 
-- 全 12 ベースのメイン行は `Genre: Glitchcore hip-hop. Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.` で始まり、後ろにベースごとの味付け（hyperpop / breakcore / jersey club / phonk / chiptune など）が付きます。メイン行は自動トリムで削られないので、どの出力にも必ず入ります。
+- 全 12 ベースのメイン行は `Genre: Glitchcore hip-hop. Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.` で始まり、後ろにベースごとの味付けが付きます。メイン行は自動トリムで削られません。
+- ジャンル置換は既定 ON で、メイン行先頭の `Glitchcore hip-hop` を `makina x Anime Opening x Addictive tracks x ○○ EDM MiX`（14 候補）のどれかに置き換えます。
 - ボーカルは全ベースで sweet Lolita の女性 1 人の速いラップです（Avoid で男性ボーカルを禁止）。BPM は 145〜185 です。
-- 言語比率は「英語 70-80%＋残り日本語」「日本語 70-80%＋残り英語」「1 小節内で日英ミックス」の 3 パターンです。
-- 歌詞の文言は指定せず、テーマは情景と感情だけを書いて SUNO 側に任せます。古文フラグメントは使いません。
-- ジャンル置換はメイン行先頭の `Glitchcore hip-hop` だけを入れ替えます（既定 OFF）。
-- Structure とサウンド補足は、V1〜V4 に出てくる区画（Pre-chorus / Chorus / Post-chorus / Bridge / Silence / Hook / Spoken word / Rap verse / Rap bridge / Rap break / Breakdown / Transition / Final bars / Last section / 終わり方の指示 など）と段落の種類（Samples / Keep / 副ジャンル / Stage / Phase / Main concept / Constantly alternate / Electronic, not / Drops / Mix）をすべて持ちます。全ベース共通の骨格に、珍しい区画をベースごとに分散させています。
+- 言語比率は 11 候補、歌詞テーマは 58 件（12 ベース分 ＋ 追加 46）、Never use は V5 専用の 1 行です。
+- Structure とサウンド補足は、V1〜V4 に出てくる区画と段落の種類をすべて持ちます。
+- 曲中で 2〜3 回転調します。BPM 行に開始キーと Key plan、Structure の転調位置に `Key change:` 行（半音上げ・全音上げ・平行調への移動などの相対的な動きと、つなぎ方）、補足の先頭に `Modulation:` 段落（ドロップや無音でつなぐ・フックを高く歌い直す・歌詞に `[Key Change]` タグを入れる）を置きます。ランダム生成で BPM 行と Structure が別ベースから選ばれても矛盾しないよう、キー名は開始キーにだけ書きます。3000 文字を超えても BPM 行・`Key change:` 行・`Modulation:` 段落は削られません。
+- 古文フラグメントは使いません。
 
 ## 候補データの更新
 

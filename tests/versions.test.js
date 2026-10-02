@@ -435,121 +435,97 @@ test("V5 のランダム出力は 3000 文字以内に削られても転調の�
   await page.close();
 });
 
-// ── V6: 感情の設計図（物語 × 1 つのメロディ × 静と爆発の落差 × 道具としてのジャンル） ──
+// ── V6: DTM の手入力感（打ち込みの手触り × 音源カード） ──
 
 async function v6Blocks(page, key, kind) {
   const src = await slotSource(page, key);
   return (kind === "block" ? src.split(/^---$/m) : src.split("\n")).map((t) => t.trim()).filter(Boolean);
 }
 
-test("V6 のメイン行はコンセプトカードで、モチーフとグルーヴを定義し、ジャンル名 makina を 1 回だけ書く", async () => {
+const V6_BRANDS = /roland|yamaha|korg|sound ?canvas|sc-?88|sc-?55|pc-?98|vocaloid|hatsune|fl studio|ableton|cubase|sonar|famitracker|impulse tracker|fasttracker|opna|ym2608|nec/i;
+
+test("V6 のメイン行はジャンル・手入力の DTM・音源カード・ムードの順で、音源カードは 3 種類以上の時代にまたがる", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
   const mains = await v6Blocks(page, "main", "line");
   assert.equal(mains.length, 10);
-  for (const m of mains) {
-    assert.match(m, /^Concept: .+\. One hook, one groove\. The motif: .+?, chopped like a DJ sample\. Groove: [^.]*makina[^.]*\./, "コンセプトの構文: " + m.slice(0, 60));
-    assert.equal((m.match(/makina/gi) || []).length, 1, "makina は 1 回: " + m.slice(0, 60));
-    assert.doesNotMatch(m, /quiet world|loud world/i);
+  for (const m of mains) assert.match(m, /^Genre: .+, hand-typed DTM\. Sound source: .+\. Mood: .+\.$/, "メイン行の構文: " + m.slice(0, 60));
+  const sources = new Set(mains.map((m) => m.match(/Sound source: (.+?)\. Mood/)[1].toLowerCase()));
+  for (const re of [/general midi|gm sound module/, /fm/, /tracker/, /soft ?synth|plug-?in/]) {
+    assert.ok([...sources].some((src) => re.test(src)), "音源カード " + re);
   }
   await page.close();
 });
 
-test("V6 は重低音のドコドコ・止め・DJ サンプリングを全ベースに入れ、楽器名は持たずモチーフとグルーヴを名前で指す", async () => {
+test("V6 は全ベースに打ち込みの手触り（クオンタイズ・固定ベロシティ）と DTM らしい編曲・ドラム・ミックスを入れる", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
-  const motifs = (await v6Blocks(page, "main", "line")).map((m) => m.match(/The motif: (?:an? |the )?(.+?), chopped/)[1].toLowerCase());
-  for (const key of ["core", "extra", "structure", "vocal"]) {
-    const src = (await slotSource(page, key)).toLowerCase();
-    for (const motif of motifs) assert.ok(!src.includes(motif), key + " にモチーフ楽器名「" + motif + "」がない");
-    assert.doesNotMatch(src, /makina|quiet world|loud world/, key + " にジャンル名や旧構文がない");
-  }
   for (const c of await v6Blocks(page, "core", "line")) {
-    assert.match(c, /^Groove first: .+ The whole track rides this one groove\.$/, "グルーヴの仕掛け: " + c.slice(0, 60));
-    assert.match(c, /kick/i);
-    assert.match(c, /sub|bass/i);
+    assert.match(c, /^Typed-in feel: /, "打ち込みの手触り: " + c.slice(0, 50));
+    assert.match(c, /quantized/i);
+    assert.match(c, /velocity/i);
   }
   for (const b of await v6Blocks(page, "extra", "block")) {
-    assert.match(b, /^Stops: /m, "止め");
-    assert.match(b, /^DJ samples: .+ Original, not copied\.$/m, "DJ サンプリング");
-    assert.match(b, /^Mix: .*sub/m, "重低音のミックス");
+    assert.match(b, /^Arrangement: /m);
+    assert.match(b, /^Drums: /m);
+    assert.match(b, /^Mix: /m);
   }
   for (const b of await v6Blocks(page, "structure", "block")) {
-    assert.match(b, /kick roll/i, "ドコドコ（キックロール）");
-    assert.match(b, /^Stop: /m, "止めの区画");
-    assert.match(b, /^Drop\b/m);
-    assert.match(b, /^Bridge: /m, "物語のどんでん返しを置く区画");
-    assert.match(b, /^Final drop: key change up a step, energy rises/m);
-    assert.match(b, /the motif/i);
-    assert.match(b, /the groove/i);
+    assert.match(b, /preset|program change|32nd|impossible/i, "打ち込みならではの見せ場");
+    assert.match(b, /^(Ending|Loop)\b/m, "DTM らしい終わり方");
   }
   await page.close();
 });
 
-test("V6 のボーカルは全ベースで大人の女性のハスキーボイスが主役で、男性は出さない", async () => {
+test("V6 はインスト中心で、硬い合成音声と打ち込み伴奏の人声も候補に持ち、言語比率は歌がある場合だけに効く書き方", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
   const vocals = await v6Blocks(page, "vocal", "block");
-  assert.equal(vocals.length, 10);
-  for (const v of vocals) {
-    assert.match(v, /^One adult female vocalist with a husky/, "大人の女性・ハスキー: " + v.slice(0, 60));
-    assert.match(v, /chopped|like an instrument/i, "声を楽器のように使う");
-    assert.doesNotMatch(v, /\b(male rapper|he|his|duet partner)\b/i);
-  }
-  const avoid = await slotSource(page, "avoid");
-  assert.match(avoid, /\bmale vocal/i);
-  assert.match(avoid, /childish|overly cute/i, "子どもっぽい声を避ける");
-  assert.match(avoid, /weak|thin kick/i, "弱いキックを避ける");
-  assert.match(avoid, /long ambient breakdown/i, "長い静かな区間を避ける");
+  assert.ok(vocals.filter((v) => /^Instrumental\b/.test(v)).length >= 5, "インストが半分以上");
+  assert.ok(vocals.some((v) => /synthesized singing voice/i.test(v)), "硬い合成音声");
+  assert.ok(vocals.some((v) => /backing stays fully programmed/i.test(v)), "人声＋打ち込み伴奏");
+  const ratios = await v6Blocks(page, "ratio", "line");
+  assert.ok(ratios.some((r) => /^Lyrics: none\b/.test(r)), "歌なしの候補");
+  for (const r of ratios) assert.match(r, /^Lyrics: none\b|^Lyrics \(if any\): /, "歌がある場合だけに効く: " + r);
   await page.close();
 });
 
-test("V6 の歌詞テーマは物語の 1 場面とどんでん返しで、言葉は SUNO に任せる", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v6");
-  const themes = await v6Blocks(page, "theme", "block");
-  assert.ok(themes.length >= 10);
-  for (const t of themes) {
-    assert.match(t, /^Theme: /);
-    assert.match(t, /^Twist: /m, "どんでん返し");
-    assert.match(t, /Write every line in your own fresh words/);
-  }
-  for (const key of ["main", "core", "extra", "structure", "vocal", "theme"]) {
-    assert.doesNotMatch(await slotSource(page, key), /["“”]/, key + " に引用符の歌詞指定がない");
-  }
-  await page.close();
-});
-
-test("V6 は言語比率と Never use に V5 の指定を使い、ジャンル置換は既定 OFF で Groove の makina を入れ替える", async () => {
+test("V6 は Never use に V5 の指定を使い、Avoid で人間らしい揺れや生演奏感を避け、ジャンル置換は既定 OFF", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
-  const ratio = await slotSource(page, "ratio");
   const never = await slotSource(page, "never");
   await useVersion(page, "v6");
-  assert.deepEqual((await slotSource(page, "ratio")).split("\n").sort(), ratio.split("\n").sort());
   assert.equal(await slotSource(page, "never"), never);
-  assert.equal(await page.inputValue("#swapFrom"), "makina");
+  const avoid = await slotSource(page, "avoid");
+  assert.match(avoid, /humanized/i);
+  assert.match(avoid, /live band/i);
+  assert.doesNotMatch(avoid, /fade-out/i, "ゲーム BGM 風のフェードアウトは禁じない");
   assert.equal(await page.isChecked("#swapEnabled"), false);
-  await page.check("#swapEnabled");
-  await page.fill('[data-slot="genre"] [data-src]', "hardstyle");
-  await page.click("#btnRandomGen");
-  const out = await page.inputValue("#outputText");
-  assert.match(out, /Groove: [^.]*hardstyle/);
-  assert.doesNotMatch(out, /makina/i);
   await page.close();
 });
 
-test("V6 のランダム出力は短く（2400 文字以内）削られず、コンセプト・グルーヴ・止め・DJ サンプル・構成・声・物語がそろう", async () => {
+test("V6 は機種名・ソフト名・製品名を書かず、歌詞の文言も引用符で指定しない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v6");
+  for (const key of ["bpm", "main", "core", "extra", "structure", "vocal", "ratio", "theme", "avoid"]) {
+    const src = await slotSource(page, key);
+    assert.doesNotMatch(src, V6_BRANDS, key + " に固有名詞がない");
+    assert.doesNotMatch(src, /["“”]/, key + " に引用符がない");
+  }
+  await page.close();
+});
+
+test("V6 のランダム出力は短く（2400 文字以内）削られず、ジャンル・音源・手触り・編曲・構成・声がそろう", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
   for (let i = 0; i < 25; i++) {
     const out = await randomOutput(page);
     assert.ok(out.length <= 2400, "長さ " + out.length);
     assert.doesNotMatch((await page.textContent("#trimNote")) || "", /削りました/);
-    for (const re of [/^BPM \d+/m, /^Concept: /m, /^Groove first: /m, /^Stops: /m, /^DJ samples: /m, /^Structure:/m, /^One adult female vocalist with a husky/m, /^Lyrics: /m, /^Theme: /m, /^Twist: /m, /^Never use:/m, /^Avoid: /m]) {
+    assert.doesNotMatch(out, V6_BRANDS);
+    for (const re of [/^BPM \d+/m, /^Genre: .+, hand-typed DTM\./m, /Sound source: /, /^Typed-in feel: /m, /^Arrangement: /m, /^Drums: /m, /^Mix: /m, /^Structure:/m, /^Lyrics/m, /^Never use:/m, /^Avoid: /m]) {
       assert.match(out, re);
     }
   }
   await page.close();
 });
-

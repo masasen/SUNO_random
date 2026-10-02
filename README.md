@@ -18,7 +18,7 @@ SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリで�
 | V3 | Glass Cherry Maze を土台に TRANCE × EDM BANGER Vol.31 の 10 曲 | V3 専用の 1 行 | あり |
 | V4 | StreetDanceEDM #07 / #08 の 14 曲 | 共通の 1 行 | あり |
 | V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
-| V6 | 感情の設計図（物語 × 1 つのメロディ × 静と爆発の落差 × 道具としてのジャンル）の 10 ベース | V5 と同じ Never use、Avoid は専用の 1 行 | なし |
+| V6 | 感情の設計図（物語とどんでん返しの歌詞 × 重低音で乗れるグルーヴ）の 10 ベース | V5 と同じ Never use、Avoid は専用の 1 行 | なし |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4 で共通です。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -34,11 +34,10 @@ SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリで�
 
 ## V6 の書き方
 
-- 音の説明を厚くせず、刺さる仕掛けだけを短く指定します（出力は 1,700〜2,000 文字前後）。
-- メイン行のコンセプトカードが「モチーフ楽器・静かな世界・爆発する世界」を決めます。Structure・メロディの仕掛け・補足・ボーカルは楽器名を書かず `the motif` / `the quiet world` / `the loud world` で指すので、ランダムにどう組み合わせても話がかみ合います。
-- Core sound の欄はメロディの仕掛け（泣きメロ・王道進行などのコード進行・旋律の跳躍）、補足は落差の演出、Structure は落差の付け方の型、テーマは物語の 1 場面とブリッジでのどんでん返し（Twist）です。
-- 声は全ベース大人の女性のハスキーボイスです（Avoid で男性ボーカルと子どもっぽい声を避ける）。
-- 言語比率と Never use は V5 の指定を借ります（`app.js` の `VERSIONS` の `borrow`）。ジャンル置換は Loud world の `makina` だけを入れ替えます（既定 OFF）。
+- 歌詞は物語の 1 場面とブリッジでのどんでん返し（Twist）、曲調は重低音のドコドコ（歪んだキック・キックロール・タムロール・サブベース）・止め（Stops）・DJ サンプリングで最後まで乗れるグルーヴです（出力は 2,000 文字前後）。
+- メイン行のコンセプトカードがモチーフ楽器とグルーヴ（`Groove: ... makina ...`）を決めます。Structure・グルーヴの仕掛け・補足・ボーカルは楽器名を書かず `the motif` / `the groove` で指すので、ランダムにどう組み合わせても話がかみ合います。モチーフは DJ サンプルのように刻んでフックにします。
+- 声は全ベース大人の女性のハスキーボイスで、楽器のように短く刻んだフレーズ中心です（歌詞に意味がなくても成立）。Avoid で男性ボーカル・子どもっぽい声・弱いキック・長い静かな区間を避けます。
+- 言語比率と Never use は V5 の指定を借ります（`app.js` の `VERSIONS` の `borrow`）。ジャンル置換は Groove の `makina` だけを重低音系のジャンル（hard bass / hardstyle / jumpstyle / UK hardcore / bass house など）に入れ替えます（既定 OFF）。
 
 ## 候補データの更新
 

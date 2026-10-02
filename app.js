@@ -41,8 +41,8 @@ const HINT_DJ = {
 const DROP_ORDER_SETS = [/^keep\b/i, /^future bass (is|remains)\b/i, /sampl(e|ing)/i];
 // ドロップの作りが曲の芯なので、ミックス質感 → FX・トランジション → ドロップ、の順に落とす
 const DROP_ORDER_DJ = [/^mix\b/i, /^fx\b/i, /^drops?\b/i, /^samples?\b/i];
-// V5 はグリッチ処理を最後まで残す
-const DROP_ORDER_V5 = [/^mix\b/i, /^drops?\b/i, /^glitch\b/i];
+// V5 は念押し → 副ジャンル → ジャンルの線引き → ミックス → ドロップ → サンプリングの順に落とし、グリッチ処理・コンセプト・Stage / Phase・リズムの切り替えは最後まで残す
+const DROP_ORDER_V5 = [/^keep\b/i, /\b(is|remains) secondary\b/i, /^electronic, not\b/i, /^mix\b/i, /^drops?\b/i, /^samples?\b/i];
 
 const VERSIONS = [
   {
@@ -77,9 +77,9 @@ const VERSIONS = [
     hints: Object.assign({}, HINT_DJ, {
       pattern: "全 12 ベースのメイン行が <code>Glitchcore hip-hop. Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.</code> で始まり、後ろにベースごとの味付け（hyperpop / breakcore / jersey club / phonk / chiptune など）が付きます。メイン行は削られないので、どの出力にもこのスタイル文が必ず入ります。",
       genre: "メイン行先頭の <code>Glitchcore hip-hop</code> だけを、下の候補からランダムに選んだ 1 語で置き換えます。既定は OFF です。",
-      extra: "グリッチ処理 / ドロップの作り / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Mix → Drops の順に段落が削られ、Glitch FX は最後まで残ります。",
+      extra: "コンセプト / DJ サンプリング / グリッチ処理 / Stage・Phase / リズムの切り替え / ドロップの作り / 念押し / 副ジャンルの扱い / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に段落が削られ、Glitch FX・Main concept・Stage / Phase・Constantly alternate は最後まで残ります。",
       theme: "V5 専用のテーマ 12 件。情景と感情だけを抽象的に指定し、歌詞の文言は SUNO 側に任せます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
-      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、Glitch FX は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。",
+      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に落とすので、Glitch FX・Main concept・Stage / Phase・Constantly alternate は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。",
       analysis: "",
     }),
   },

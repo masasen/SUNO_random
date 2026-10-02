@@ -28,6 +28,7 @@ SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリで�
 - 言語比率は「英語 70-80%＋残り日本語」「日本語 70-80%＋残り英語」「1 小節内で日英ミックス」の 3 パターンです。
 - 歌詞の文言は指定せず、テーマは情景と感情だけを書いて SUNO 側に任せます。古文フラグメントは使いません。
 - ジャンル置換はメイン行先頭の `Glitchcore hip-hop` だけを入れ替えます（既定 OFF）。
+- Structure とサウンド補足は、V1〜V4 に出てくる区画（Pre-chorus / Chorus / Post-chorus / Bridge / Silence / Hook / Spoken word / Rap verse / Rap bridge / Rap break / Breakdown / Transition / Final bars / Last section / 終わり方の指示 など）と段落の種類（Samples / Keep / 副ジャンル / Stage / Phase / Main concept / Constantly alternate / Electronic, not / Drops / Mix）をすべて持ちます。全ベース共通の骨格に、珍しい区画をベースごとに分散させています。
 
 ## 候補データの更新
 

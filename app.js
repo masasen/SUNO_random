@@ -83,17 +83,33 @@ const VERSIONS = [
       analysis: "",
     }),
   },
+  {
+    id: "v6", badge: "V6 / EMOTION BLUEPRINT", bpmTitle: "BPM・キー", swapFrom: "makina", swapEnabled: false,
+    extrasFirst: false, dropOrder: [/^mix\b/i, /^contrast\b/i], ownLyrics: true, borrow: { from: "v5", keys: ["lyricsRatios", "never"] },
+    hints: Object.assign({}, HINT_DJ, {
+      pattern: "感情の設計図方式の 10 ベース。メイン行のコンセプトカードが「モチーフ楽器・静かな世界・爆発する世界」を決め、メロディの仕掛け（泣きメロ・コード進行）・落差の付け方（Structure）・物語（1 場面とどんでん返し）を組み合わせます。Structure などは楽器名を書かず the motif / the quiet world / the loud world で指すので、ランダムにどう組み合わせても話がかみ合います。声は全ベース大人の女性のハスキーボイスです。",
+      genre: "コンセプトカードの Loud world にある <code>makina</code> だけを、下の候補からランダムに選んだ 1 語で置き換えます。既定は OFF です。",
+      core: "メロディの仕掛け（泣きメロ・コード進行・旋律の跳躍）。1 行 1 候補。どの行も最後に「この 1 つのメロディ（モチーフ）で曲全体を組む」と書きます。",
+      extra: "落差の演出（Contrast）とミックス。<b><code>---</code> だけの行で区切って 1 候補</b>。",
+      theme: "物語の 1 場面と、ブリッジでのどんでん返し（Twist）。歌詞の文言は SUNO に任せます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
+      trim: "短いプロンプトで刺さる仕掛けだけを指定する方式なので、通常は 3000 文字に届きません。超えたときは「サウンド補足 → ボーカル指定の補足行 → Structure の中間行」の順に削ります。",
+      analysis: "",
+    }),
+  },
 ];
 
 let version = null;
 let data = null;
 
 // 版のデータに V4 の共通データを重ねる。版が自前で持つ Never use / Avoid（V3 の両方、V1 / V2 の Avoid）はそちらを優先する。
-// ownLyrics の版（V5）は歌詞テーマ・古文も自前のものだけを使う
+// ownLyrics の版（V5 / V6）は歌詞テーマ・古文も自前のものだけを使う。borrow の版は指定のキーを別の版のデータから借りる
 function resolveData(id) {
   const own = window.PROMPT_DATA[id];
-  if (VERSIONS.find((v) => v.id === id).ownLyrics) {
-    return Object.assign({}, own, { themes: uniq(own.patterns.map((p) => p.theme).filter(Boolean).concat(own.themes)) });
+  const def = VERSIONS.find((v) => v.id === id);
+  if (def.ownLyrics) {
+    const borrowed = {};
+    if (def.borrow) for (const key of def.borrow.keys) borrowed[key] = window.PROMPT_DATA[def.borrow.from][key];
+    return Object.assign({}, own, borrowed, { themes: uniq(own.patterns.map((p) => p.theme).filter(Boolean).concat(own.themes)) });
   }
   const shared = window.PROMPT_DATA[SHARED_SOURCE];
   return Object.assign({}, own, {

@@ -1,11 +1,11 @@
 # SUNO_random
 
-SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリです。画面上部の `V1` / `V2` / `V3` / `V4` / `V5` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V5 です。
+SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリです。画面上部の `V1` / `V2` / `V3` / `V4` / `V5` / `V6` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V6 です。
 
 ## ファイルの役割
 
 - `index.html`: 画面の外枠とスタイル。候補データの更新時は編集不要です。
-- `prompt-data-v1.js` 〜 `prompt-data-v5.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
+- `prompt-data-v1.js` 〜 `prompt-data-v6.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
 - `app.js`: 版の切り替え、ランダム抽選、組み立て、保存などの処理。版ごとの説明文・ジャンル置換の既定値・自動トリムで削る順もここにあります。
 - `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。
 
@@ -18,6 +18,7 @@ SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリで�
 | V3 | Glass Cherry Maze を土台に TRANCE × EDM BANGER Vol.31 の 10 曲 | V3 専用の 1 行 | あり |
 | V4 | StreetDanceEDM #07 / #08 の 14 曲 | 共通の 1 行 | あり |
 | V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
+| V6 | 感情の設計図（物語 × 1 つのメロディ × 静と爆発の落差 × 道具としてのジャンル）の 10 ベース | V5 と同じ Never use、Avoid は専用の 1 行 | なし |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4 で共通です。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -30,6 +31,14 @@ SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリで�
 - Structure とサウンド補足は、V1〜V4 に出てくる区画と段落の種類をすべて持ちます。
 - 転調は効きやすい書き方に絞り、最後のサビの直前で 1 回だけ上げます（up a step）。BPM 行に `key change up a step into the final chorus`、Structure は `Final chorus:` 行の中に転調と耳で分かる変化（energy rises / bigger voice）、補足の先頭の `Modulation:` 段落で歌詞の区画タグの中に書かせます（`[Final Chorus: key change up a step, energy rises, bigger voice]`）。独立した `[Key Change]` タグや relative major / half step などの理論用語は使いません。3000 文字を超えてもこの 3 か所は削られません。確実に転調させたいときは、最後のサビ直前の無音・ドロップで切って Suno Studio の Pitch で後半を上げてください。
 - 古文フラグメントは使いません。
+
+## V6 の書き方
+
+- 音の説明を厚くせず、刺さる仕掛けだけを短く指定します（出力は 1,700〜2,000 文字前後）。
+- メイン行のコンセプトカードが「モチーフ楽器・静かな世界・爆発する世界」を決めます。Structure・メロディの仕掛け・補足・ボーカルは楽器名を書かず `the motif` / `the quiet world` / `the loud world` で指すので、ランダムにどう組み合わせても話がかみ合います。
+- Core sound の欄はメロディの仕掛け（泣きメロ・王道進行などのコード進行・旋律の跳躍）、補足は落差の演出、Structure は落差の付け方の型、テーマは物語の 1 場面とブリッジでのどんでん返し（Twist）です。
+- 声は全ベース大人の女性のハスキーボイスです（Avoid で男性ボーカルと子どもっぽい声を避ける）。
+- 言語比率と Never use は V5 の指定を借ります（`app.js` の `VERSIONS` の `borrow`）。ジャンル置換は Loud world の `makina` だけを入れ替えます（既定 OFF）。
 
 ## 候補データの更新
 

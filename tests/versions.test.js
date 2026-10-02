@@ -442,34 +442,46 @@ async function v6Blocks(page, key, kind) {
   return (kind === "block" ? src.split(/^---$/m) : src.split("\n")).map((t) => t.trim()).filter(Boolean);
 }
 
-test("V6 のメイン行はコンセプトカードで、2 つの世界とモチーフを定義し、ジャンル名 makina を 1 回だけ書く", async () => {
+test("V6 のメイン行はコンセプトカードで、モチーフとグルーヴを定義し、ジャンル名 makina を 1 回だけ書く", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
   const mains = await v6Blocks(page, "main", "line");
   assert.equal(mains.length, 10);
   for (const m of mains) {
-    assert.match(m, /^Concept: .+\. One melody, two worlds\. The motif: .+\. Quiet world: .+\. Loud world: .+\./, "コンセプトの構文: " + m.slice(0, 60));
+    assert.match(m, /^Concept: .+\. One hook, one groove\. The motif: .+?, chopped like a DJ sample\. Groove: [^.]*makina[^.]*\./, "コンセプトの構文: " + m.slice(0, 60));
     assert.equal((m.match(/makina/gi) || []).length, 1, "makina は 1 回: " + m.slice(0, 60));
+    assert.doesNotMatch(m, /quiet world|loud world/i);
   }
   await page.close();
 });
 
-test("V6 の Structure・メロディの仕掛け・補足・ボーカルは楽器名を持たず、モチーフと 2 つの世界を名前で指す", async () => {
+test("V6 は重低音のドコドコ・止め・DJ サンプリングを全ベースに入れ、楽器名は持たずモチーフとグルーヴを名前で指す", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
-  const motifs = (await v6Blocks(page, "main", "line")).map((m) => m.match(/The motif: (?:an? |the )?(.+?)\./)[1].toLowerCase());
+  const motifs = (await v6Blocks(page, "main", "line")).map((m) => m.match(/The motif: (?:an? |the )?(.+?), chopped/)[1].toLowerCase());
   for (const key of ["core", "extra", "structure", "vocal"]) {
     const src = (await slotSource(page, key)).toLowerCase();
     for (const motif of motifs) assert.ok(!src.includes(motif), key + " にモチーフ楽器名「" + motif + "」がない");
-    assert.doesNotMatch(src, /makina/, key + " にジャンル名がない");
+    assert.doesNotMatch(src, /makina|quiet world|loud world/, key + " にジャンル名や旧構文がない");
   }
   for (const c of await v6Blocks(page, "core", "line")) {
-    assert.match(c, /^Melody first: .+ The whole song is built around this one melody, the motif\.$/, "メロディの仕掛け: " + c.slice(0, 60));
+    assert.match(c, /^Groove first: .+ The whole track rides this one groove\.$/, "グルーヴの仕掛け: " + c.slice(0, 60));
+    assert.match(c, /kick/i);
+    assert.match(c, /sub|bass/i);
+  }
+  for (const b of await v6Blocks(page, "extra", "block")) {
+    assert.match(b, /^Stops: /m, "止め");
+    assert.match(b, /^DJ samples: .+ Original, not copied\.$/m, "DJ サンプリング");
+    assert.match(b, /^Mix: .*sub/m, "重低音のミックス");
   }
   for (const b of await v6Blocks(page, "structure", "block")) {
+    assert.match(b, /kick roll/i, "ドコドコ（キックロール）");
+    assert.match(b, /^Stop: /m, "止めの区画");
+    assert.match(b, /^Drop\b/m);
+    assert.match(b, /^Bridge: /m, "物語のどんでん返しを置く区画");
+    assert.match(b, /^Final drop: key change up a step, energy rises/m);
     assert.match(b, /the motif/i);
-    assert.match(b, /quiet world/i);
-    assert.match(b, /loud world/i);
+    assert.match(b, /the groove/i);
   }
   await page.close();
 });
@@ -481,11 +493,14 @@ test("V6 のボーカルは全ベースで大人の女性のハスキーボイ�
   assert.equal(vocals.length, 10);
   for (const v of vocals) {
     assert.match(v, /^One adult female vocalist with a husky/, "大人の女性・ハスキー: " + v.slice(0, 60));
+    assert.match(v, /chopped|like an instrument/i, "声を楽器のように使う");
     assert.doesNotMatch(v, /\b(male rapper|he|his|duet partner)\b/i);
   }
   const avoid = await slotSource(page, "avoid");
   assert.match(avoid, /\bmale vocal/i);
   assert.match(avoid, /childish|overly cute/i, "子どもっぽい声を避ける");
+  assert.match(avoid, /weak|thin kick/i, "弱いキックを避ける");
+  assert.match(avoid, /long ambient breakdown/i, "長い静かな区間を避ける");
   await page.close();
 });
 
@@ -505,7 +520,7 @@ test("V6 の歌詞テーマは物語の 1 場面とどんでん返しで、言�
   await page.close();
 });
 
-test("V6 は言語比率と Never use に V5 の指定を使い、ジャンル置換は既定 OFF で makina を入れ替える", async () => {
+test("V6 は言語比率と Never use に V5 の指定を使い、ジャンル置換は既定 OFF で Groove の makina を入れ替える", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   const ratio = await slotSource(page, "ratio");
@@ -516,22 +531,22 @@ test("V6 は言語比率と Never use に V5 の指定を使い、ジャンル�
   assert.equal(await page.inputValue("#swapFrom"), "makina");
   assert.equal(await page.isChecked("#swapEnabled"), false);
   await page.check("#swapEnabled");
-  await page.fill('[data-slot="genre"] [data-src]', "drum & bass");
+  await page.fill('[data-slot="genre"] [data-src]', "hardstyle");
   await page.click("#btnRandomGen");
   const out = await page.inputValue("#outputText");
-  assert.match(out, /Loud world: [^.]*drum & bass/);
+  assert.match(out, /Groove: [^.]*hardstyle/);
   assert.doesNotMatch(out, /makina/i);
   await page.close();
 });
 
-test("V6 のランダム出力は短く（2400 文字以内）削られず、コンセプト・メロディ・構成・声・物語がそろう", async () => {
+test("V6 のランダム出力は短く（2400 文字以内）削られず、コンセプト・グルーヴ・止め・DJ サンプル・構成・声・物語がそろう", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
   for (let i = 0; i < 25; i++) {
     const out = await randomOutput(page);
     assert.ok(out.length <= 2400, "長さ " + out.length);
     assert.doesNotMatch((await page.textContent("#trimNote")) || "", /削りました/);
-    for (const re of [/^BPM \d+/m, /^Concept: /m, /^Melody first: /m, /^Structure:/m, /^One adult female vocalist with a husky/m, /^Lyrics: /m, /^Theme: /m, /^Twist: /m, /^Never use:/m, /^Avoid: /m]) {
+    for (const re of [/^BPM \d+/m, /^Concept: /m, /^Groove first: /m, /^Stops: /m, /^DJ samples: /m, /^Structure:/m, /^One adult female vocalist with a husky/m, /^Lyrics: /m, /^Theme: /m, /^Twist: /m, /^Never use:/m, /^Avoid: /m]) {
       assert.match(out, re);
     }
   }

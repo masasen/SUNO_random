@@ -84,18 +84,19 @@ const VERSIONS = [
     }),
   },
   {
-    id: "v6", badge: "V6 / EMOTION BLUEPRINT × HEAVY GROOVE", bpmTitle: "BPM・キー", swapFrom: "makina", swapEnabled: false,
-    extrasFirst: false, dropOrder: [/^mix\b/i, /^dj samples?\b/i, /^stops?\b/i], ownLyrics: true, borrow: { from: "v5", keys: ["lyricsRatios", "never"] },
+    id: "v6", badge: "V6 / HAND-TYPED DTM", bpmTitle: "BPM・キー", swapFrom: "", swapEnabled: false,
+    extrasFirst: false, dropOrder: [/^mix\b/i, /^drums?\b/i, /^arrangement\b/i], ownLyrics: true, borrow: { from: "v5", keys: ["never"] },
     hints: Object.assign({}, HINT_DJ, {
-      pattern: "感情の設計図方式の 10 ベース。歌詞は物語の 1 場面とどんでん返し、曲調は重低音のドコドコ（歪んだキック・キックロール・タムロール・サブベース）・止め・DJ サンプリングで最後まで乗れるグルーヴです。メイン行のコンセプトカードがモチーフ楽器とグルーヴを決め、Structure などは楽器名を書かず the motif / the groove で指すので、ランダムにどう組み合わせても話がかみ合います。声は大人の女性のハスキーボイスを楽器のように使います。",
-      genre: "コンセプトカードの Groove にある <code>makina</code> だけを、下の候補（重低音で乗れるジャンル）からランダムに選んだ 1 語で置き換えます。既定は OFF です。",
-      core: "グルーヴの仕掛け（キックとベースの型・キックロール・タムロール）。1 行 1 候補。どの行も最後に「このグルーヴ 1 本で最後まで乗せる」と書きます。",
-      extra: "止め（Stops）・DJ サンプリング・重低音のミックス。<b><code>---</code> だけの行で区切って 1 候補</b>。",
-      theme: "物語の 1 場面と、ブリッジでのどんでん返し（Twist）。歌詞の文言は SUNO に任せます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
-      trim: "短いプロンプトで仕掛けだけを指定する方式なので、通常は 3000 文字に届きません。超えたときは「サウンド補足（Mix → DJ samples → Stops）→ ボーカル指定の補足行 → Structure の中間行」の順に削ります。",
+      pattern: "DTM の手入力感を再現する 10 ベース。ピアノロールに 1 音ずつ打ち込んだような機械的な正確さ（クオンタイズ・固定ベロシティ・段階的なオートメーション・プログラムチェンジ・人間には弾けない速弾き・ユニゾン重ね・GM ドラムの定番フィル）を全ベースの主役にし、メイン行の音源カード（GM 音源モジュール / 国産 PC の FM 音源 / トラッカー / 初期のソフトシンセ / DAW 付属プラグイン）で時代と質感を決めます。インスト中心です。",
+      genre: "ジャンルは各ベースで違うので既定は OFF です。使うときは置換元にメイン行のジャンル（例: <code>makina</code>）を入れて有効にしてください。",
+      core: "打ち込みの手触り（クオンタイズ・固定ベロシティ・段階的なオートメーション）。1 行 1 候補。",
+      extra: "編曲（ユニゾン重ね・プリセットの切り替え）/ ドラム（GM ドラムの定番フィル）/ ミックス（送りの量が固定・磨きすぎない）。<b><code>---</code> だけの行で区切って 1 候補</b>。",
+      theme: "インストでも使える情景（Image）。歌がある場合だけ、歌詞の文言は SUNO に任せます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
+      trim: "短いプロンプトで仕掛けだけを指定する方式なので、通常は 3000 文字に届きません。超えたときは「サウンド補足（Mix → Drums → Arrangement）→ ボーカル指定の補足行 → Structure の中間行」の順に削ります。",
       analysis: "",
     }),
   },
+
 
 ];
 

@@ -178,11 +178,25 @@ test("古文フラグメントの文面は V1〜V4 で共通、V5 は古文フ�
 // ── V5: Glitchcore hip-hop × sweet Lolita female vocals ──
 
 const V5_BASE = "Genre: Glitchcore hip-hop. Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.";
+const V5_STYLE = "Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.";
+const V5_SWAPS = [
+  "Glitchcore hip-hop", "jersey club", "hyperpop", "breakcore", "digicore", "nightcore", "drift phonk",
+  "drum & bass", "trap", "rage", "jungle", "happy hardcore", "future bass", "hyper techno",
+].map((g) => "makina x Anime Opening x Addictive tracks x " + g + " EDM MiX");
 const V5_RATIOS = [
   "Lyrics: English 70-80%, Japanese for the rest.",
-  "Lyrics: Japanese 70-80%, English for the rest.",
-  "Lyrics: Japanese and English mixed inside every bar, switching mid-line.",
+  "Lyrics: Japanese and English mixed inside every bar, random switching mid-line.",
+  "Lyrics: Japanese 60-70%, short natural English 30-40%.",
+  "Lyrics: Japanese 70-80%, short natural English 20-30%.",
+  "Lyrics: Japanese 80-90%, short natural English 10-20%.",
+  "Lyrics: Japanese 50-60%, short natural English 40-50%.",
+  "Lyrics: Japanese 40-50%, natural English 50-60%.",
+  "Lyrics: Japanese 90-100%, English only as short hook words.",
+  "Lyrics: Japanese 65%, short natural English 35%, with one English hook in the chorus.",
+  "Lyrics: Japanese 75%, short natural English 25%, English used only for short repeated calls.",
+  "Lyrics: English-main 70% with Japanese 30%, natural code-switching within lines.",
 ];
+const V5_NEVER = "ネオン, 午前二時, 既読, コンビニ, 愛してる, 通知, 深夜, べつに, ねえ, 噛んで, キャンディ, リボン, 離れないで, 行かないで, あなたがほしい, 離さない, stay with me, 消えないで, 砂糖, pixel, sugar-face.";
 
 async function v5Chips(page) {
   return page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
@@ -197,9 +211,13 @@ test("V5 は全ベースのメイン行を指定のスタイル文で始め、�
   for (const id of await v5Chips(page)) {
     await page.click('#patternChips .chip[data-id="' + id + '"]');
     await page.click("#btnGenerate");
-    assert.ok((await page.inputValue("#outputText")).includes(V5_BASE), "パターン " + id);
+    assert.ok((await page.inputValue("#outputText")).includes(V5_STYLE), "パターン " + id);
   }
-  for (let i = 0; i < 10; i++) assert.ok((await randomOutput(page)).includes(V5_BASE), "ランダム出力");
+  for (let i = 0; i < 10; i++) {
+    const out = await randomOutput(page);
+    assert.ok(out.includes(V5_STYLE), "ランダム出力にスタイル文");
+    assert.match(out, /^Genre: (Glitchcore hip-hop|makina x Anime Opening x Addictive tracks x .+ EDM MiX)\. /m, "ランダム出力のジャンル");
+  }
   await page.close();
 });
 
@@ -228,34 +246,44 @@ test("V5 のボーカルは全ベースで sweet Lolita の女性 1 人の速い
   await page.close();
 });
 
-test("V5 の言語比率は英語メイン / 日本語メイン / 1 小節内ミックスの 3 パターンだけ", async () => {
+test("V5 の言語比率の既定は指定の 11 行（重複は除く）", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   assert.deepEqual((await slotSource(page, "ratio")).split("\n").sort(), [...V5_RATIOS].sort());
   await page.close();
 });
 
-test("V5 は歌詞の文言を引用符で指定せず、SUNO 側に任せる", async () => {
+test("V5 は歌詞の文言を引用符で指定しない（歌詞テーマは指定どおりの既定値）", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
-  for (const key of ["main", "core", "extra", "structure", "vocal", "theme"]) {
+  for (const key of ["main", "core", "extra", "structure", "vocal"]) {
     assert.doesNotMatch(await slotSource(page, key), /["“”]/, key + " に引用符の歌詞指定がない");
   }
-  const themes = (await slotSource(page, "theme")).split(/^---$/m);
-  for (const t of themes) assert.match(t, /in your own fresh words/);
   await page.close();
 });
 
-test("V5 のジャンル置換は既定 OFF で、有効にするとスタイル名だけが入れ替わる", async () => {
+test("V5 の歌詞テーマの既定は指定の 58 件、Never use は指定の 1 行（重複と全角読点を整理）", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  const themes = (await slotSource(page, "theme")).split(/^---$/m).map((t) => t.trim());
+  assert.equal(themes.length, 58);
+  assert.ok(themes[0].startsWith("Theme: a sugar-coated girl whose thoughts move faster than the screen can load."));
+  assert.ok(themes[themes.length - 1].startsWith("Theme: a dawn highway drive after a long night of thinking."));
+  assert.ok(themes.some((t) => t.includes("Chorus: \"switch on\" calls, carrying the day and taking her turn.")));
+  assert.equal(await slotSource(page, "never"), V5_NEVER);
+  await page.close();
+});
+
+test("V5 のジャンル置換は既定 ON で、候補は指定の 14 行。スタイル名だけが入れ替わる", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   assert.equal(await page.inputValue("#swapFrom"), "Glitchcore hip-hop");
-  assert.equal(await page.isChecked("#swapEnabled"), false);
-  await page.check("#swapEnabled");
-  await page.fill('[data-slot="genre"] [data-src]', "jersey club");
+  assert.equal(await page.isChecked("#swapEnabled"), true);
+  assert.deepEqual((await slotSource(page, "genre")).split("\n").slice(1), V5_SWAPS);
+  await page.fill('[data-slot="genre"] [data-src]', V5_SWAPS[1]);
   await page.click("#btnRandomGen");
   const out = await page.inputValue("#outputText");
-  assert.match(out, /^Genre: jersey club\. Sweet Lolita female vocals/m);
+  assert.match(out, /^Genre: makina x Anime Opening x Addictive tracks x jersey club EDM MiX\. Sweet Lolita female vocals/m);
   assert.doesNotMatch(out, /glitchcore hip-hop/i);
   await page.close();
 });
@@ -356,9 +384,47 @@ test("V5 は補足と Structure を増やしても全ベースが 3000 文字以
     await page.click("#btnGenerate");
     const out = await page.inputValue("#outputText");
     assert.ok(out.length <= 3000, "パターン " + id + ": " + out.length);
-    assert.ok(out.includes(V5_BASE));
+    assert.ok(out.includes(V5_STYLE));
     assert.match(out, /^Glitch FX:/m);
     assert.match(out, /^Chorus\b/m);
+  }
+  await page.close();
+});
+
+// ── V5: 曲中の複数回の転調 ──
+
+test("V5 は全ベースで BPM 行に転調の計画、Structure に 2 回以上の Key change、補足の先頭に転調の作り方を持つ", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  for (const line of (await slotSource(page, "bpm")).split("\n").filter(Boolean)) {
+    assert.match(line, /^BPM \d+, starts in [A-G][#b]? (major|minor)\. Key plan: /, "BPM 行: " + line);
+  }
+  for (const b of (await slotSource(page, "structure")).split(/^---$/m)) {
+    const lines = b.trim().split("\n");
+    const idx = lines.map((l, i) => (/^Key change: /.test(l) ? i : -1)).filter((i) => i >= 0);
+    assert.ok(idx.length >= 2, "Key change が 2 回以上: " + idx.length);
+    for (const i of idx) {
+      assert.match(lines[i], /^Key change: (up a (half|whole) step|over to the relative major|back to minor)[^.]*, pivot on /, "相対的な動きとつなぎ方: " + lines[i]);
+      assert.ok(i + 1 < lines.length && !/^Key change:/.test(lines[i + 1]), "Key change の直後に区画がある");
+    }
+    assert.doesNotMatch(b.split("\n").filter((l) => /^Key change:/.test(l)).join("\n"), /\b[A-G][#b]? (major|minor)\b/, "Key change にキー名を書かない（ランダムな組み合わせで矛盾させない）");
+  }
+  for (const b of (await slotSource(page, "extra")).split(/^---$/m)) {
+    const first = b.trim().split(/\n\s*\n/)[0];
+    assert.match(first, /^Modulation: /, "補足の先頭は Modulation");
+    assert.match(first, /\[Key Change\]/, "歌詞に [Key Change] タグを入れる指示");
+  }
+  await page.close();
+});
+
+test("V5 のランダム出力は 3000 文字以内に削られても転調の計画と Key change 行を必ず残す", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  for (let i = 0; i < 25; i++) {
+    const out = await randomOutput(page);
+    assert.ok(out.length <= 3000, "長さ " + out.length);
+    assert.match(out, /^BPM .*Key plan: /m);
+    assert.ok((out.match(/^Key change: /gm) || []).length >= 2, "Key change 行が残る");
   }
   await page.close();
 });

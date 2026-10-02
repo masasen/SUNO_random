@@ -270,3 +270,96 @@ test("V5 の Never use / Avoid は V4 と別の専用候補", async () => {
   assert.notEqual(await slotSource(page, "avoid"), v4Avoid);
   await page.close();
 });
+
+// Structure の区画名を正規化する。「Label: ...」はラベル、文だけの行（End with ... など）は先頭の 1 語
+function structureLabels(src) {
+  const alias = { pre: "pre-chorus", post: "post-chorus", "build-up": "build" };
+  const labels = new Set();
+  for (const line of src.split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || /^-{3,}$/.test(t) || /^structure:$/i.test(t)) continue;
+    const m = t.match(/^([^:]{1,25}):/);
+    let label = (m ? m[1] : t.split(/\s+/)[0]).toLowerCase().replace(/\(.*?\)/g, "").replace(/\s*\d+$/, "").trim();
+    labels.add(alias[label] || label);
+  }
+  return labels;
+}
+
+// サウンド補足の段落の種類。V1〜V4 に出てくる書き方をすべて分類する
+const EXTRA_KINDS = {
+  samples: /^(samples:|use [a-z -]*(dj-style|glitch-edit) sampl)/i,
+  keep: /^keep\b/i,
+  secondary: /\b(is|remains) (secondary|contrast)\b/i,
+  stage: /^stage \d:/i,
+  phase: /^phase \d:/i,
+  concept: /^main concept:/i,
+  alternate: /^constantly alternate\b/i,
+  notGenre: /^electronic, not\b/i,
+  drops: /^drops?:/i,
+  mix: /^mix:/i,
+};
+
+function extraKinds(src) {
+  const kinds = new Set();
+  for (const para of src.split(/^\s*-{3,}\s*$|\n\s*\n/m)) {
+    const t = para.trim();
+    for (const [k, re] of Object.entries(EXTRA_KINDS)) if (re.test(t)) kinds.add(k);
+  }
+  return kinds;
+}
+
+test("V5 の Structure は V1〜V4 に出てくる区画をすべて持つ", async () => {
+  const { page } = await openPage();
+  const others = new Set();
+  for (const id of ["v1", "v2", "v3", "v4"]) {
+    await useVersion(page, id);
+    for (const l of structureLabels(await slotSource(page, "structure"))) others.add(l);
+  }
+  await useVersion(page, "v5");
+  const v5 = structureLabels(await slotSource(page, "structure"));
+  const missing = [...others].filter((l) => !v5.has(l));
+  assert.deepEqual(missing, [], "V5 に無い区画: " + missing.join(", "));
+  const blocks = (await slotSource(page, "structure")).split(/^---$/m);
+  for (const b of blocks) {
+    const ls = structureLabels(b);
+    for (const need of ["chorus", "pre-chorus", "post-chorus", "bridge", "final chorus", "silence"]) assert.ok(ls.has(need), "全ベースに " + need);
+  }
+  await page.close();
+});
+
+test("V5 のサウンド補足は V1〜V4 に出てくる段落の種類をすべて持つ", async () => {
+  const { page } = await openPage();
+  const others = new Set();
+  for (const id of ["v1", "v2", "v3", "v4"]) {
+    await useVersion(page, id);
+    for (const k of extraKinds(await slotSource(page, "extra"))) others.add(k);
+  }
+  assert.equal(others.size, Object.keys(EXTRA_KINDS).length, "V1〜V4 の段落の種類はすべて分類できている");
+  await useVersion(page, "v5");
+  const src = await slotSource(page, "extra");
+  const v5 = extraKinds(src);
+  const missing = [...others].filter((k) => !v5.has(k));
+  assert.deepEqual(missing, [], "V5 に無い段落: " + missing.join(", "));
+  for (const b of src.split(/^---$/m)) {
+    const ks = extraKinds(b);
+    for (const need of ["samples", "keep", "secondary", "drops", "mix"]) assert.ok(ks.has(need), "全ベースに " + need);
+    assert.match(b, /^Glitch FX:/m, "Glitch FX は残す");
+  }
+  await page.close();
+});
+
+test("V5 は補足と Structure を増やしても全ベースが 3000 文字以内に収まり、スタイル文とグリッチ処理は削られない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  for (const id of await v5Chips(page)) {
+    await page.click('#patternChips .chip[data-id="' + id + '"]');
+    await page.click("#btnGenerate");
+    const out = await page.inputValue("#outputText");
+    assert.ok(out.length <= 3000, "パターン " + id + ": " + out.length);
+    assert.ok(out.includes(V5_BASE));
+    assert.match(out, /^Glitch FX:/m);
+    assert.match(out, /^Chorus\b/m);
+  }
+  await page.close();
+});
+

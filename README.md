@@ -28,7 +28,7 @@ SUNO Simple Prompt Builder V1〜V5 の GitHub Pages 公開用リポジトリで�
 - ボーカルは全ベースで sweet Lolita の女性 1 人の速いラップです（Avoid で男性ボーカルを禁止）。BPM は 145〜185 です。
 - 言語比率は 11 候補、歌詞テーマは 58 件（12 ベース分 ＋ 追加 46）、Never use は V5 専用の 1 行です。
 - Structure とサウンド補足は、V1〜V4 に出てくる区画と段落の種類をすべて持ちます。
-- 曲中で 2〜3 回転調します。BPM 行に開始キーと Key plan、Structure の転調位置に `Key change:` 行（半音上げ・全音上げ・平行調への移動などの相対的な動きと、つなぎ方）、補足の先頭に `Modulation:` 段落（ドロップや無音でつなぐ・フックを高く歌い直す・歌詞に `[Key Change]` タグを入れる）を置きます。ランダム生成で BPM 行と Structure が別ベースから選ばれても矛盾しないよう、キー名は開始キーにだけ書きます。3000 文字を超えても BPM 行・`Key change:` 行・`Modulation:` 段落は削られません。
+- 転調は効きやすい書き方に絞り、最後のサビの直前で 1 回だけ上げます（up a step）。BPM 行に `key change up a step into the final chorus`、Structure は `Final chorus:` 行の中に転調と耳で分かる変化（energy rises / bigger voice）、補足の先頭の `Modulation:` 段落で歌詞の区画タグの中に書かせます（`[Final Chorus: key change up a step, energy rises, bigger voice]`）。独立した `[Key Change]` タグや relative major / half step などの理論用語は使いません。3000 文字を超えてもこの 3 か所は削られません。確実に転調させたいときは、最後のサビ直前の無音・ドロップで切って Suno Studio の Pitch で後半を上げてください。
 - 古文フラグメントは使いません。
 
 ## 候補データの更新

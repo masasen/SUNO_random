@@ -391,41 +391,45 @@ test("V5 は補足と Structure を増やしても全ベースが 3000 文字以
   await page.close();
 });
 
-// ── V5: 曲中の複数回の転調 ──
+// ── V5: 転調（区画タグの中に書く・1 曲 1 回・平易な言葉） ──
 
-test("V5 は全ベースで BPM 行に転調の計画、Structure に 2 回以上の Key change、補足の先頭に転調の作り方を持つ", async () => {
+const V5_KEY_TAG = "[Final Chorus: key change up a step, energy rises, bigger voice]";
+const V5_THEORY_WORDS = /relative major|minor third|half step|whole step|semitone|Key plan|Key change:|\[Key Change\]/i;
+
+test("V5 の転調は BPM 行に短い指示、Structure は Final chorus 行の中だけ、補足の先頭で区画タグの中に書かせる", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   for (const line of (await slotSource(page, "bpm")).split("\n").filter(Boolean)) {
-    assert.match(line, /^BPM \d+, starts in [A-G][#b]? (major|minor)\. Key plan: /, "BPM 行: " + line);
+    assert.match(line, /^BPM \d+, [A-G][#b]? (major|minor), key change up a step into the final chorus\.$/, "BPM 行: " + line);
   }
   for (const b of (await slotSource(page, "structure")).split(/^---$/m)) {
     const lines = b.trim().split("\n");
-    const idx = lines.map((l, i) => (/^Key change: /.test(l) ? i : -1)).filter((i) => i >= 0);
-    assert.ok(idx.length >= 2, "Key change が 2 回以上: " + idx.length);
-    for (const i of idx) {
-      assert.match(lines[i], /^Key change: (up a (half|whole) step|over to the relative major|back to minor)[^.]*, pivot on /, "相対的な動きとつなぎ方: " + lines[i]);
-      assert.ok(i + 1 < lines.length && !/^Key change:/.test(lines[i + 1]), "Key change の直後に区画がある");
-    }
-    assert.doesNotMatch(b.split("\n").filter((l) => /^Key change:/.test(l)).join("\n"), /\b[A-G][#b]? (major|minor)\b/, "Key change にキー名を書かない（ランダムな組み合わせで矛盾させない）");
+    const hits = lines.filter((l) => /key change/i.test(l));
+    assert.equal(hits.length, 1, "転調の指示は 1 曲 1 回");
+    assert.match(hits[0], /^Final chorus: key change up a step, energy rises, bigger voice\b/, "Final chorus 行の中に書く: " + hits[0]);
   }
   for (const b of (await slotSource(page, "extra")).split(/^---$/m)) {
     const first = b.trim().split(/\n\s*\n/)[0];
     assert.match(first, /^Modulation: /, "補足の先頭は Modulation");
-    assert.match(first, /\[Key Change\]/, "歌詞に [Key Change] タグを入れる指示");
+    assert.ok(first.includes(V5_KEY_TAG), "歌詞の区画タグの中に転調を書く例");
+    assert.match(first, /no other key change/i, "1 曲 1 回");
+  }
+  for (const key of ["bpm", "structure", "extra"]) {
+    const src = (await slotSource(page, key)).replace(V5_KEY_TAG, "");
+    assert.doesNotMatch(src.replace(/\[Final Chorus: key change up a step, energy rises, bigger voice\]/g, ""), V5_THEORY_WORDS, key + " に理論用語や独立した転調タグがない");
   }
   await page.close();
 });
 
-test("V5 のランダム出力は 3000 文字以内に削られても転調の計画と Key change 行を必ず残す", async () => {
+test("V5 のランダム出力は 3000 文字以内に削られても転調の指示（BPM 行・Final chorus 行・Modulation）を必ず残す", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   for (let i = 0; i < 25; i++) {
     const out = await randomOutput(page);
     assert.ok(out.length <= 3000, "長さ " + out.length);
-    assert.match(out, /^BPM .*Key plan: /m);
-    assert.ok((out.match(/^Key change: /gm) || []).length >= 2, "Key change 行が残る");
+    assert.match(out, /^BPM .*key change up a step into the final chorus\.$/m);
+    assert.match(out, /^Final chorus: key change up a step, energy rises, bigger voice/m);
+    assert.ok(out.includes(V5_KEY_TAG), "区画タグの例が残る");
   }
   await page.close();
 });
-

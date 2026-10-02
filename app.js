@@ -75,11 +75,11 @@ const VERSIONS = [
     id: "v5", badge: "V5 / GLITCHCORE × SWEET LOLITA", bpmTitle: "BPM・キー", swapFrom: "Glitchcore hip-hop", swapEnabled: true,
     extrasFirst: false, dropOrder: DROP_ORDER_V5, ownLyrics: true,
     hints: Object.assign({}, HINT_DJ, {
-      pattern: "全 12 ベースのメイン行が <code>Glitchcore hip-hop. Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.</code> で始まり、後ろにベースごとの味付け（hyperpop / breakcore / jersey club / phonk / chiptune など）が付きます。メイン行は削られないので、どの出力にもこのスタイル文が必ず入ります。どのベースも曲中で 2〜3 回転調し、BPM 行の Key plan と Structure の Key change 行で転調位置を指定します。",
+      pattern: "全 12 ベースのメイン行が <code>Glitchcore hip-hop. Sweet Lolita female vocals, fast rap over a fast, driving beat, bright compressed synth layers with rising tension and sudden drops, distorted bass and shimmering synths.</code> で始まり、後ろにベースごとの味付け（hyperpop / breakcore / jersey club / phonk / chiptune など）が付きます。メイン行は削られないので、どの出力にもこのスタイル文が必ず入ります。どのベースも最後のサビの直前で 1 回だけ転調（up a step）し、歌詞では区画タグの中に書かせます（[Final Chorus: key change up a step, ...]）。",
       genre: "メイン行先頭の <code>Glitchcore hip-hop</code> だけを、下の候補（<code>makina x Anime Opening x Addictive tracks x ○○ EDM MiX</code>）からランダムに選んだ 1 行で置き換えます。既定は ON です。",
       extra: "転調の作り方（Modulation・先頭固定）/ コンセプト / DJ サンプリング / グリッチ処理 / Stage・Phase / リズムの切り替え / ドロップの作り / 念押し / 副ジャンルの扱い / ミックス質感。<b><code>---</code> だけの行で区切って 1 候補</b>（候補の中は空行で段落を分けられます）。3000 文字を超えたときは Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に段落が削られ、Modulation・Glitch FX・Main concept・Stage / Phase・Constantly alternate は最後まで残ります。",
       theme: "V5 専用のテーマ 58 件（12 ベース分 ＋ 追加 46）。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
-      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に落とすので、Modulation・Glitch FX・Main concept・Stage / Phase・Constantly alternate は最後まで残ります。Structure の中間行を削るときも、転調位置を示す Key change 行は残します。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。",
+      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に落とすので、Modulation・Glitch FX・Main concept・Stage / Phase・Constantly alternate は最後まで残ります。Structure の中間行を削るときも、転調を指示する行（Final chorus 行）は残します。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。",
       analysis: "",
     }),
   },
@@ -323,10 +323,10 @@ function trimToLimit(state) {
     notes.push("ボーカル指定の補足行");
   }
 
-  // 3. Structure の中間行を末尾寄りから間引く（見出し・冒頭・最終行と、転調位置を示す Key change 行は残す）
+  // 3. Structure の中間行を末尾寄りから間引く（見出し・冒頭・最終行と、転調を指示する行は残す）
   while (over() && state.structureLines.length > 4) {
     let i = state.structureLines.length - 2;
-    while (i > 1 && /^key change\b/i.test(state.structureLines[i].trim())) i--;
+    while (i > 1 && /key change/i.test(state.structureLines[i])) i--;
     if (i <= 1) break;
     state.structureLines.splice(i, 1);
     notes.push("Structure の中間行");

@@ -52,7 +52,7 @@ test("ヘッダーに V1〜V6 の切り替えボタンがあり、初回は V6",
   const labels = await page.$$eval("#versionSwitch [data-ver]", (els) => els.map((e) => e.textContent.trim()));
   assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6"]);
   assert.match(await page.textContent("#versionBadge"), /^V6/);
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 8);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 1);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -63,7 +63,7 @@ const CASES = [
   { id: "v3", chips: 10, classical: true, analysis: true },
   { id: "v4", chips: 14, classical: true, analysis: true },
   { id: "v5", chips: 12, classical: false, analysis: false },
-  { id: "v6", chips: 8, classical: false, analysis: true },
+  { id: "v6", chips: 1, classical: false, analysis: true, lists: false },
 ];
 
 for (const c of CASES) {
@@ -78,8 +78,12 @@ for (const c of CASES) {
       const out = await randomOutput(page);
       assert.ok(out.length > 0 && out.length <= 3000, c.id + " の出力が 3000 文字以内: " + out.length);
       assert.equal(out.includes(CLASSICAL), c.classical, c.id + " の古文フラグメント");
-      assert.match(out, /Never use:\n/);
-      assert.match(out, /Avoid:/);
+      if (c.lists === false) {
+        assert.doesNotMatch(out, /Never use:|Avoid:/, c.id + " は Never use / Avoid を書かない");
+      } else {
+        assert.match(out, /Never use:\n/);
+        assert.match(out, /Avoid:/);
+      }
       if (c.classical) {
         const themeToClassical = out.slice(out.indexOf("Theme:"), out.indexOf(CLASSICAL));
         assert.doesNotMatch(themeToClassical, /^Chorus:/m, "テーマの Chorus 行は古文指示の後ろ");
@@ -435,96 +439,60 @@ test("V5 のランダム出力は 3000 文字以内に削られても転調の�
   await page.close();
 });
 
-// ── V6: sample フォルダの 8 曲（トラパラ）を 1 曲 1 ベースで実測から完全模倣 ──
+// ── V6: 刺さった自作曲 Byte by Byte を、作ったときの入力形式（短いキーワードの列挙）に実測を足して完全模倣 ──
 
-async function v6Blocks(page, key, kind) {
-  const src = await slotSource(page, key);
-  return (kind === "block" ? src.split(/^---$/m) : src.split("\n")).map((t) => t.trim()).filter(Boolean);
+// SUNO に残っていた、この曲を作ったときのシンプルモードの説明文（13 キーワード）
+const V6_ORIGINAL = [
+  "中毒性のある曲", "リズムがいい曲", "ノリのいい曲", "テンションが上がる曲", "低音が気持ちいい曲",
+  "女性ボーカル", "ハスキーボイス", "English lyric", "Korean HipHOP", "Dark EDM", "Hyper Techno", "EuroBeat", "8-bit",
+];
+
+async function v6Output(page) {
+  await useVersion(page, "v6");
+  await page.click('#patternChips .chip[data-id="1"]');
+  await page.click("#btnGenerate");
+  return page.inputValue("#outputText");
 }
 
-const V6_SOURCES = /monster|mr\.? ?vain|moskau|dragostea|bad boy|independence|flashback|love ?& ?joy|yoshinori|project y|bald bull|khubilai|digimind|satomi|banzai|cascada|enzo|mike nero|alphazone|田中|みゆき|code|trapara best/i;
+test("V6 は Byte by Byte を作ったときの 13 キーワードを元の順番どおりに全部含む", async () => {
+  const { page } = await openPage();
+  const out = await v6Output(page);
+  let pos = -1;
+  for (const k of V6_ORIGINAL) {
+    const i = out.indexOf(k + ",");
+    assert.ok(i > pos, "元の順番でキーワードがある: " + k);
+    pos = i;
+  }
+  await page.close();
+});
 
-test("V6 は sample フォルダの 8 曲を 1 曲 1 ベースで持ち、音源解析メモに元曲と実測値を残す", async () => {
+test("V6 は短いキーワードを 1 行ずつ並べる形式で、全行がカンマで終わり、500 文字以内に収まる", async () => {
+  const { page } = await openPage();
+  const out = await v6Output(page);
+  assert.ok(out.length <= 500, "長さ " + out.length);
+  for (const line of out.split("\n").filter((l) => l.trim())) {
+    assert.match(line, /,$/, "カンマで終わる: " + line);
+    assert.ok(line.length <= 40, "1 行は短いキーワード: " + line);
+  }
+  assert.doesNotMatch(out, /Never use:|Avoid:|Structure:|Theme:/, "説明文の見出しを使わない");
+  assert.doesNotMatch(out, /byte by byte/i, "曲名は出力に入れない");
+  for (let i = 0; i < 5; i++) assert.equal(await randomOutput(page), out, "ランダム生成でも同じ 1 曲の模倣");
+  await page.close();
+});
+
+test("V6 は実測で分かった音と展開を同じ書き方のキーワードで足す（BPM 180・808・4 つ打ち・モノラル寄り・止め）", async () => {
+  const { page } = await openPage();
+  const out = await v6Output(page);
+  for (const re of [/^BPM 180,$/m, /808/, /4つ打ち/, /モノラル/, /止め/, /^キーはE,$/m]) assert.match(out, re);
+  await page.close();
+});
+
+test("V6 の音源解析メモに、実測値とメタデータ（作成時の入力・SUNO のモデル・タグ）を残す", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 8);
   const notes = await page.$$eval("#analysisList .list-item", (els) => els.map((e) => e.textContent));
-  assert.equal(notes.length, 9, "まとめ 1 件 ＋ 8 曲");
-  for (const n of notes.slice(1)) {
-    assert.match(n, /Chapter [2-9]/, "元の章: " + n.slice(0, 40));
-    assert.match(n, /143\.\d BPM/, "実測 BPM");
-    assert.match(n, /[A-G]#? (major|minor)/, "実測キー");
-    assert.match(n, /サブ \d+%/, "帯域の実測");
-  }
-  await page.close();
-});
-
-test("V6 のプロンプトはトラックシート構文（BPM・ジャンル・実測グルーヴ・リード・実測ミックス・実測アレンジ）で組む", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v6");
-  for (const l of await v6Blocks(page, "bpm", "line")) assert.match(l, /^BPM 143, [A-G]#? (major|minor), 4\/4/, "BPM 行: " + l);
-  for (const m of await v6Blocks(page, "main", "line")) assert.match(m, /^Genre: trapara, mid-2000s Japanese hands-up trance for para para dancing, a DJ-mix club cut\. Style: .+\. Mood: .+\.$/, "メイン行: " + m.slice(0, 60));
-  for (const c of await v6Blocks(page, "core", "line")) {
-    assert.match(c, /^Groove \(measured\): kick on every beat/, "グルーヴ: " + c.slice(0, 50));
-    assert.match(c, /bass/i);
-  }
-  for (const b of await v6Blocks(page, "extra", "block")) {
-    assert.match(b, /^Lead: /m);
-    assert.match(b, /^Mix \(measured\): /m);
-  }
-  for (const b of await v6Blocks(page, "structure", "block")) {
-    assert.match(b, /^Arrangement \(8-bar blocks, measured\):/);
-    assert.ok((b.match(/\b\d:\d\d\b/g) || []).length >= 4, "実測の時刻が 4 つ以上");
-  }
-  await page.close();
-});
-
-test("V6 は曲名・アーティスト名・映像の固有名詞を出力に入れず、元曲の旋律もコピーさせない", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v6");
-  for (const key of ["bpm", "main", "core", "extra", "structure", "vocal", "ratio", "theme", "avoid"]) {
-    const src = await slotSource(page, key);
-    assert.doesNotMatch(src, V6_SOURCES, key + " に固有名詞がない");
-    assert.doesNotMatch(src, /["“”]/, key + " に引用符がない");
-  }
-  for (const m of await v6Blocks(page, "main", "line")) assert.match(m, /original melody/i, "旋律はオリジナル");
-  for (let i = 0; i < 15; i++) assert.doesNotMatch(await randomOutput(page), V6_SOURCES);
-  await page.close();
-});
-
-test("V6 の声は実測どおり、ほぼインストの曲と歌モノの曲が混在し、言語も曲ごとに違う", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v6");
-  const vocals = await v6Blocks(page, "vocal", "block");
-  assert.ok(vocals.filter((v) => /^Mostly instrumental/.test(v)).length >= 2, "ほぼインスト 2 曲以上");
-  assert.ok(vocals.filter((v) => /female/i.test(v)).length >= 3, "女性ボーカル");
-  const ratios = await v6Blocks(page, "ratio", "line");
-  for (const re of [/English/, /Japanese/, /Eastern European/i, /none/i]) assert.ok(ratios.some((r) => re.test(r)), "言語 " + re);
-  await page.close();
-});
-
-test("V6 は Never use に V5 の指定を使い、Avoid で 2000 年代のトラパラから外れる音を避け、ジャンル置換は既定 OFF", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v5");
-  const never = await slotSource(page, "never");
-  await useVersion(page, "v6");
-  assert.equal(await slotSource(page, "never"), never);
-  const avoid = await slotSource(page, "avoid");
-  for (const re of [/dubstep/i, /trap/i, /half-time/i, /future bass/i]) assert.match(avoid, re);
-  assert.equal(await page.isChecked("#swapEnabled"), false);
-  await page.close();
-});
-
-test("V6 のランダム出力は 3000 文字以内で削られず、トラックシートの各行がそろう", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v6");
-  for (let i = 0; i < 25; i++) {
-    const out = await randomOutput(page);
-    assert.ok(out.length <= 3000, "長さ " + out.length);
-    assert.doesNotMatch((await page.textContent("#trimNote")) || "", /削りました/);
-    for (const re of [/^BPM 143, /m, /^Genre: trapara, /m, /^Groove \(measured\): /m, /^Lead: /m, /^Mix \(measured\): /m, /^Arrangement \(8-bar blocks, measured\):/m, /^Lyrics/m, /^Never use:/m, /^Avoid: /m]) {
-      assert.match(out, re);
-    }
-  }
+  assert.equal(notes.length, 2);
+  const all = notes.join("\n");
+  for (const re of [/180\.0 BPM/, /サブ 37%/, /ステレオ幅 0\.17/, /v5\.5/, /中毒性のある曲/, /Dark EDM, Hyper Techno, Eurobeat/]) assert.match(all, re);
   await page.close();
 });

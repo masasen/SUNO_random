@@ -84,18 +84,22 @@ const VERSIONS = [
     }),
   },
   {
-    id: "v6", badge: "V6 / TRAPARA MEASURED", bpmTitle: "BPM・キー", swapFrom: "trapara", swapEnabled: false,
-    extrasFirst: false, dropOrder: [/^vocal processing\b/i, /^lead\b/i], ownLyrics: true, borrow: { from: "v5", keys: ["never"] },
+    id: "v6", badge: "V6 / KEYWORD REMAKE", bpmTitle: "BPM", swapFrom: "", swapEnabled: false,
+    extrasFirst: false, dropOrder: [], ownLyrics: true,
     hints: Object.assign({}, HINT_DJ, {
-      pattern: "work4/sample の MP4 8 本（トラパラの DJ ミックス、Chapter 2〜9）を 1 曲 1 ベースにしています。librosa・demucs・Whisper・映像の字幕で 1 曲ずつ解析し、実測した事実をそのまま書く「トラックシート」構文（BPM → Genre / Style → Groove (measured) → Lead / Mix (measured) → Arrangement (8-bar blocks, measured) → 声 → 言語 → テーマ）で組んでいます。曲名・アーティスト名は出力に入れず、旋律はオリジナルにさせます。",
-      genre: "Genre の <code>trapara</code> を下の候補からランダムに選んだ 1 語で置き換えます。完全模倣が目的なので既定は OFF です。",
-      core: "実測したグルーヴ（1 小節 16 分割でのキック・ベース・ハイハットの位置）。1 行 1 候補。",
-      extra: "リードの音色 / ボーカルの加工 / 実測した帯域バランスとステレオ幅・音量。<b><code>---</code> だけの行で区切って 1 候補</b>。",
-      theme: "曲ごとのテーマ。歌詞の文言は SUNO に任せます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
-      trim: "実測の事実だけを書く方式なので、通常は 3000 文字に届きません。超えたときは「サウンド補足（Vocal processing → Lead）→ ボーカル指定の補足行 → Arrangement の中間行」の順に削ります。",
-      analysis: "先頭はミックス全体のまとめ。続く 8 件は各曲の実測値（librosa: BPM / 区間ごとのキー / 帯域比 / ステレオ幅 / 音量推移、demucs: ステム比・1 小節パターン・リードの音域と減衰、Whisper: 歌の言語と内容）と、映像の字幕で確認した元曲名です。",
+      pattern: "刺さった自作曲（#62-Byte_by_Byte.mp3、SUNO v5.5）の完全模倣です。この曲はシンプルモードの説明欄に短いキーワードを 13 個並べただけで作られていたので、長い説明文をやめて同じ「短いキーワードを 1 行ずつ、末尾カンマで並べる」形式に戻し、元の 13 キーワードを元の順番のまま残して、音源の実測で分かった音と展開を同じ書き方で足しています（500 文字以内）。",
+      genre: "この版はキーワードの並びを崩さないため、ジャンル置換は使いません。",
+      main: "この版では使いません（キーワードは補足の欄にまとめています）。",
+      core: "この版では使いません（キーワードは補足の欄にまとめています）。",
+      extra: "元の 13 キーワード（気分 / 声・言語・ジャンル）と、実測で分かった音（キー・808・4 つ打ち・ベースの跳ね方・モノラル寄り・8bit のアルペジオ）の 3 段落。元の順番を崩さないよう 1 候補にまとめています。",
+      theme: "",
+      never: "",
+      avoid: "",
+      trim: "500 文字以内のキーワードの列挙なので、3000 文字に届くことはありません。",
+      analysis: "先頭はメタデータ（作成時の入力・SUNO が書いたスタイルタグと歌詞の構成・モデル）。続く 1 件は音源の実測値（librosa / demucs / Whisper）です。",
     }),
   },
+
 
 
 

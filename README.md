@@ -18,7 +18,7 @@ SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリで�
 | V3 | Glass Cherry Maze を土台に TRANCE × EDM BANGER Vol.31 の 10 曲 | V3 専用の 1 行 | あり |
 | V4 | StreetDanceEDM #07 / #08 の 14 曲 | 共通の 1 行 | あり |
 | V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
-| V6 | DTM の手入力感 × 重低音の EDM / hyper techno / techpara の 10 ベース | V5 と同じ Never use、Avoid は専用の 1 行 | なし |
+| V6 | work4/sample のトラパラ 8 曲を実測から完全模倣（1 曲 1 ベース） | V5 と同じ Never use、Avoid は専用の 1 行 | あり |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4 で共通です。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -34,10 +34,10 @@ SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリで�
 
 ## V6 の書き方
 
-- DTM の手入力感のまま、重低音の EDM / hyper techno / techpara に寄せた 10 ベースです（hyper techno ×4・techpara ×3・EDM ×2・hard trance ×1、BPM 128〜170）。歪んだキック・サブベース・オフビートのベースを全ベースに入れ、構成はビルドアップ → ドロップです。ピアノロールに 1 音ずつ打ち込んだような機械的な正確さ（クオンタイズ・固定ベロシティ・段階的なオートメーション・プログラムチェンジ・人間には弾けない 32 分の速弾き・ユニゾン重ね・GM ドラムの定番フィル・送りの量が固定のミックス）を全ベースの主役にします（出力は 2,000 文字前後）。
-- メイン行は `Genre: ○○, hand-typed DTM. Sound source: ○○. Mood: ○○.` です。音源カード（90 年代の GM 音源モジュール / 国産 PC の FM 音源 / トラッカー / 2000 年代初期のソフトシンセ / DAW 付属プラグイン）で時代と質感を決めます。機種名・ソフト名・製品名は書きません。
-- インスト中心です（主旋律はリードシンセなどの音色が歌う）。硬い合成音声や、人の声＋打ち込み伴奏の候補もあり、言語比率は歌がある場合だけ効く書き方です。
-- Never use は V5 の指定を借ります（`app.js` の `VERSIONS` の `borrow`）。ジャンルは各ベースで違うので、ジャンル置換は既定 OFF です。
+- `work4/sample` の MP4 8 本（club complex CODE「TRAPARA BEST CHAPTER #1」の Chapter 2〜9、トラパラの DJ ミックス）を 1 曲 1 ベースにしています。
+- librosa（BPM・区間ごとのキー・帯域比・ステレオ幅・2 秒ごとの音量）、demucs htdemucs_6s（ステムごとの区間音量・キック / ベース / ハイハットの 1 小節 16 分割パターン・リードの音域と減衰）、Whisper（歌の言語と内容）、映像の字幕（曲名）で 1 曲ずつ解析しました。実測値と元曲名は画面の音源解析メモに出ます。
+- プロンプトは実測した事実をそのまま書く「トラックシート」構文です: `BPM 143, <キー>, 4/4` → `Genre: trapara, ... Style: ...` → `Groove (measured):` → `Lead:` / `Mix (measured):` → `Arrangement (8-bar blocks, measured):`（時刻付き）→ 声 → 言語 → テーマ。
+- 曲名・アーティスト名は出力に入れず、カバー曲を含むため旋律は必ずオリジナルにさせます（`original melody`）。Never use は V5 の指定を借ります。ジャンル置換は Genre の `trapara` を入れ替えます（既定 OFF）。
 
 ## 候補データの更新
 

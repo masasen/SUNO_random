@@ -84,18 +84,19 @@ const VERSIONS = [
     }),
   },
   {
-    id: "v6", badge: "V6 / HAND-TYPED DTM × HEAVY EDM", bpmTitle: "BPM・キー", swapFrom: "", swapEnabled: false,
-    extrasFirst: false, dropOrder: [/^mix\b/i, /^drums?\b/i, /^arrangement\b/i], ownLyrics: true, borrow: { from: "v5", keys: ["never"] },
+    id: "v6", badge: "V6 / TRAPARA MEASURED", bpmTitle: "BPM・キー", swapFrom: "trapara", swapEnabled: false,
+    extrasFirst: false, dropOrder: [/^vocal processing\b/i, /^lead\b/i], ownLyrics: true, borrow: { from: "v5", keys: ["never"] },
     hints: Object.assign({}, HINT_DJ, {
-      pattern: "DTM の手入力感のまま、重低音の EDM / hyper techno / techpara に寄せた 10 ベース。ピアノロールに 1 音ずつ打ち込んだような機械的な正確さ（クオンタイズ・固定ベロシティ・段階的なオートメーション・プログラムチェンジ・人間には弾けない速弾き・ユニゾン重ね・機械的に速まるスネアロール）を全ベースの主役にし、歪んだキック・サブベース・オフビートのベースで重低音を聞かせます。メイン行の音源カード（GM 音源モジュール / 国産 PC の FM 音源 / トラッカー / 初期のソフトシンセ / DAW 付属プラグイン）で時代と質感を決めます。インスト中心です。",
-      genre: "ジャンルは各ベースで違うので既定は OFF です。使うときは置換元にメイン行のジャンル（例: <code>hyper techno</code>）を入れて有効にしてください。",
-      core: "打ち込みの手触り（クオンタイズ・固定ベロシティ・段階的なオートメーション）。1 行 1 候補。",
-      extra: "編曲（ユニゾン重ね・プリセットの切り替え）/ ドラム（キック・機械的なスネアロール）/ ミックス（重低音を前に）。<b><code>---</code> だけの行で区切って 1 候補</b>。",
-      theme: "インストでも使える情景（Image）。歌がある場合だけ、歌詞の文言は SUNO に任せます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
-      trim: "短いプロンプトで仕掛けだけを指定する方式なので、通常は 3000 文字に届きません。超えたときは「サウンド補足（Mix → Drums → Arrangement）→ ボーカル指定の補足行 → Structure の中間行」の順に削ります。",
-      analysis: "",
+      pattern: "work4/sample の MP4 8 本（トラパラの DJ ミックス、Chapter 2〜9）を 1 曲 1 ベースにしています。librosa・demucs・Whisper・映像の字幕で 1 曲ずつ解析し、実測した事実をそのまま書く「トラックシート」構文（BPM → Genre / Style → Groove (measured) → Lead / Mix (measured) → Arrangement (8-bar blocks, measured) → 声 → 言語 → テーマ）で組んでいます。曲名・アーティスト名は出力に入れず、旋律はオリジナルにさせます。",
+      genre: "Genre の <code>trapara</code> を下の候補からランダムに選んだ 1 語で置き換えます。完全模倣が目的なので既定は OFF です。",
+      core: "実測したグルーヴ（1 小節 16 分割でのキック・ベース・ハイハットの位置）。1 行 1 候補。",
+      extra: "リードの音色 / ボーカルの加工 / 実測した帯域バランスとステレオ幅・音量。<b><code>---</code> だけの行で区切って 1 候補</b>。",
+      theme: "曲ごとのテーマ。歌詞の文言は SUNO に任せます。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
+      trim: "実測の事実だけを書く方式なので、通常は 3000 文字に届きません。超えたときは「サウンド補足（Vocal processing → Lead）→ ボーカル指定の補足行 → Arrangement の中間行」の順に削ります。",
+      analysis: "先頭はミックス全体のまとめ。続く 8 件は各曲の実測値（librosa: BPM / 区間ごとのキー / 帯域比 / ステレオ幅 / 音量推移、demucs: ステム比・1 小節パターン・リードの音域と減衰、Whisper: 歌の言語と内容）と、映像の字幕で確認した元曲名です。",
     }),
   },
+
 
 
 ];

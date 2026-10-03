@@ -52,7 +52,7 @@ test("ヘッダーに V1〜V6 の切り替えボタンがあり、初回は V6",
   const labels = await page.$$eval("#versionSwitch [data-ver]", (els) => els.map((e) => e.textContent.trim()));
   assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6"]);
   assert.match(await page.textContent("#versionBadge"), /^V6/);
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 10);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 8);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -63,7 +63,7 @@ const CASES = [
   { id: "v3", chips: 10, classical: true, analysis: true },
   { id: "v4", chips: 14, classical: true, analysis: true },
   { id: "v5", chips: 12, classical: false, analysis: false },
-  { id: "v6", chips: 10, classical: false, analysis: false },
+  { id: "v6", chips: 8, classical: false, analysis: true },
 ];
 
 for (const c of CASES) {
@@ -435,125 +435,96 @@ test("V5 のランダム出力は 3000 文字以内に削られても転調の�
   await page.close();
 });
 
-// ── V6: DTM の手入力感（打ち込みの手触り × 音源カード） ──
+// ── V6: sample フォルダの 8 曲（トラパラ）を 1 曲 1 ベースで実測から完全模倣 ──
 
 async function v6Blocks(page, key, kind) {
   const src = await slotSource(page, key);
   return (kind === "block" ? src.split(/^---$/m) : src.split("\n")).map((t) => t.trim()).filter(Boolean);
 }
 
-const V6_BRANDS = /roland|yamaha|korg|sound ?canvas|sc-?88|sc-?55|pc-?98|vocaloid|hatsune|fl studio|ableton|cubase|sonar|famitracker|impulse tracker|fasttracker|opna|ym2608|nec/i;
+const V6_SOURCES = /monster|mr\.? ?vain|moskau|dragostea|bad boy|independence|flashback|love ?& ?joy|yoshinori|project y|bald bull|khubilai|digimind|satomi|banzai|cascada|enzo|mike nero|alphazone|田中|みゆき|code|trapara best/i;
 
-test("V6 のメイン行はジャンル・手入力の DTM・音源カード・ムードの順で、音源カードは 3 種類以上の時代にまたがる", async () => {
+test("V6 は sample フォルダの 8 曲を 1 曲 1 ベースで持ち、音源解析メモに元曲と実測値を残す", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
-  const mains = await v6Blocks(page, "main", "line");
-  assert.equal(mains.length, 10);
-  for (const m of mains) assert.match(m, /^Genre: .+, hand-typed DTM\. Sound source: .+\. Mood: .+\.$/, "メイン行の構文: " + m.slice(0, 60));
-  const sources = new Set(mains.map((m) => m.match(/Sound source: (.+?)\. Mood/)[1].toLowerCase()));
-  for (const re of [/general midi|gm sound module/, /fm/, /tracker/, /soft ?synth|plug-?in/]) {
-    assert.ok([...sources].some((src) => re.test(src)), "音源カード " + re);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 8);
+  const notes = await page.$$eval("#analysisList .list-item", (els) => els.map((e) => e.textContent));
+  assert.equal(notes.length, 9, "まとめ 1 件 ＋ 8 曲");
+  for (const n of notes.slice(1)) {
+    assert.match(n, /Chapter [2-9]/, "元の章: " + n.slice(0, 40));
+    assert.match(n, /143\.\d BPM/, "実測 BPM");
+    assert.match(n, /[A-G]#? (major|minor)/, "実測キー");
+    assert.match(n, /サブ \d+%/, "帯域の実測");
   }
   await page.close();
 });
 
-test("V6 は全ベースに打ち込みの手触り（クオンタイズ・固定ベロシティ）と DTM らしい編曲・ドラム・ミックスを入れる", async () => {
+test("V6 のプロンプトはトラックシート構文（BPM・ジャンル・実測グルーヴ・リード・実測ミックス・実測アレンジ）で組む", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
+  for (const l of await v6Blocks(page, "bpm", "line")) assert.match(l, /^BPM 143, [A-G]#? (major|minor), 4\/4/, "BPM 行: " + l);
+  for (const m of await v6Blocks(page, "main", "line")) assert.match(m, /^Genre: trapara, mid-2000s Japanese hands-up trance for para para dancing, a DJ-mix club cut\. Style: .+\. Mood: .+\.$/, "メイン行: " + m.slice(0, 60));
   for (const c of await v6Blocks(page, "core", "line")) {
-    assert.match(c, /^Typed-in feel: /, "打ち込みの手触り: " + c.slice(0, 50));
-    assert.match(c, /quantized/i);
-    assert.match(c, /velocity/i);
+    assert.match(c, /^Groove \(measured\): kick on every beat/, "グルーヴ: " + c.slice(0, 50));
+    assert.match(c, /bass/i);
   }
   for (const b of await v6Blocks(page, "extra", "block")) {
-    assert.match(b, /^Arrangement: /m);
-    assert.match(b, /^Drums: /m);
-    assert.match(b, /^Mix: /m);
+    assert.match(b, /^Lead: /m);
+    assert.match(b, /^Mix \(measured\): /m);
   }
   for (const b of await v6Blocks(page, "structure", "block")) {
-    assert.match(b, /preset|program change|32nd|impossible/i, "打ち込みならではの見せ場");
-    assert.match(b, /^(Ending|Loop)\b/m, "DTM らしい終わり方");
+    assert.match(b, /^Arrangement \(8-bar blocks, measured\):/);
+    assert.ok((b.match(/\b\d:\d\d\b/g) || []).length >= 4, "実測の時刻が 4 つ以上");
   }
   await page.close();
 });
 
-test("V6 はインスト中心で、硬い合成音声と打ち込み伴奏の人声も候補に持ち、言語比率は歌がある場合だけに効く書き方", async () => {
+test("V6 は曲名・アーティスト名・映像の固有名詞を出力に入れず、元曲の旋律もコピーさせない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v6");
+  for (const key of ["bpm", "main", "core", "extra", "structure", "vocal", "ratio", "theme", "avoid"]) {
+    const src = await slotSource(page, key);
+    assert.doesNotMatch(src, V6_SOURCES, key + " に固有名詞がない");
+    assert.doesNotMatch(src, /["“”]/, key + " に引用符がない");
+  }
+  for (const m of await v6Blocks(page, "main", "line")) assert.match(m, /original melody/i, "旋律はオリジナル");
+  for (let i = 0; i < 15; i++) assert.doesNotMatch(await randomOutput(page), V6_SOURCES);
+  await page.close();
+});
+
+test("V6 の声は実測どおり、ほぼインストの曲と歌モノの曲が混在し、言語も曲ごとに違う", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
   const vocals = await v6Blocks(page, "vocal", "block");
-  assert.ok(vocals.filter((v) => /^Instrumental\b/.test(v)).length >= 5, "インストが半分以上");
-  assert.ok(vocals.some((v) => /synthesized singing voice/i.test(v)), "硬い合成音声");
-  assert.ok(vocals.some((v) => /backing stays fully programmed/i.test(v)), "人声＋打ち込み伴奏");
+  assert.ok(vocals.filter((v) => /^Mostly instrumental/.test(v)).length >= 2, "ほぼインスト 2 曲以上");
+  assert.ok(vocals.filter((v) => /female/i.test(v)).length >= 3, "女性ボーカル");
   const ratios = await v6Blocks(page, "ratio", "line");
-  assert.ok(ratios.some((r) => /^Lyrics: none\b/.test(r)), "歌なしの候補");
-  for (const r of ratios) assert.match(r, /^Lyrics: none\b|^Lyrics \(if any\): /, "歌がある場合だけに効く: " + r);
+  for (const re of [/English/, /Japanese/, /Eastern European/i, /none/i]) assert.ok(ratios.some((r) => re.test(r)), "言語 " + re);
   await page.close();
 });
 
-test("V6 は Never use に V5 の指定を使い、Avoid で人間らしい揺れや生演奏感を避け、ジャンル置換は既定 OFF", async () => {
+test("V6 は Never use に V5 の指定を使い、Avoid で 2000 年代のトラパラから外れる音を避け、ジャンル置換は既定 OFF", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   const never = await slotSource(page, "never");
   await useVersion(page, "v6");
   assert.equal(await slotSource(page, "never"), never);
   const avoid = await slotSource(page, "avoid");
-  assert.match(avoid, /humanized/i);
-  assert.match(avoid, /live band/i);
-  assert.doesNotMatch(avoid, /fade-out/i, "ゲーム BGM 風のフェードアウトは禁じない");
+  for (const re of [/dubstep/i, /trap/i, /half-time/i, /future bass/i]) assert.match(avoid, re);
   assert.equal(await page.isChecked("#swapEnabled"), false);
   await page.close();
 });
 
-test("V6 は機種名・ソフト名・製品名を書かず、歌詞の文言も引用符で指定しない", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v6");
-  for (const key of ["bpm", "main", "core", "extra", "structure", "vocal", "ratio", "theme", "avoid"]) {
-    const src = await slotSource(page, key);
-    assert.doesNotMatch(src, V6_BRANDS, key + " に固有名詞がない");
-    assert.doesNotMatch(src, /["“”]/, key + " に引用符がない");
-  }
-  await page.close();
-});
-
-test("V6 のランダム出力は短く（2400 文字以内）削られず、ジャンル・音源・手触り・編曲・構成・声がそろう", async () => {
+test("V6 のランダム出力は 3000 文字以内で削られず、トラックシートの各行がそろう", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
   for (let i = 0; i < 25; i++) {
     const out = await randomOutput(page);
-    assert.ok(out.length <= 2400, "長さ " + out.length);
+    assert.ok(out.length <= 3000, "長さ " + out.length);
     assert.doesNotMatch((await page.textContent("#trimNote")) || "", /削りました/);
-    assert.doesNotMatch(out, V6_BRANDS);
-    for (const re of [/^BPM \d+/m, /^Genre: .+, hand-typed DTM\./m, /Sound source: /, /^Typed-in feel: /m, /^Arrangement: /m, /^Drums: /m, /^Mix: /m, /^Structure:/m, /^Lyrics/m, /^Never use:/m, /^Avoid: /m]) {
+    for (const re of [/^BPM 143, /m, /^Genre: trapara, /m, /^Groove \(measured\): /m, /^Lead: /m, /^Mix \(measured\): /m, /^Arrangement \(8-bar blocks, measured\):/m, /^Lyrics/m, /^Never use:/m, /^Avoid: /m]) {
       assert.match(out, re);
     }
   }
   await page.close();
 });
-
-test("V6 は手入力感のまま、ジャンルを重低音の EDM / hyper techno / techpara 寄りにする", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v6");
-  const genres = (await v6Blocks(page, "main", "line")).map((m) => m.match(/^Genre: (.+?), hand-typed DTM/)[1]);
-  for (const g of genres) assert.match(g, /hyper techno|techpara|EDM|hard trance/i, "ジャンル: " + g);
-  for (const re of [/hyper techno/i, /techpara/i, /EDM/, /hard trance/i]) assert.ok(genres.some((g) => re.test(g)), "ジャンルの候補 " + re);
-  for (const line of await v6Blocks(page, "bpm", "line")) assert.ok(Number(line.match(/^BPM (\d+)/)[1]) >= 128, "BPM: " + line);
-  for (const c of await v6Blocks(page, "core", "line")) {
-    assert.match(c, /kick/i, "キック: " + c.slice(0, 50));
-    assert.match(c, /sub|bass/i, "ベース: " + c.slice(0, 50));
-  }
-  for (const b of await v6Blocks(page, "extra", "block")) {
-    assert.match(b, /^Drums: .*kick/m, "ドラムにキック");
-    assert.match(b, /^Mix: .*(sub|low end)/m, "ミックスで重低音");
-  }
-  for (const b of await v6Blocks(page, "structure", "block")) {
-    assert.match(b, /^Build/m);
-    assert.match(b, /^Drop/m);
-  }
-  const avoid = await slotSource(page, "avoid");
-  assert.match(avoid, /weak|thin kick/i);
-  assert.match(avoid, /soft low end/i);
-  assert.doesNotMatch(avoid, /EDM/, "EDM は禁じない");
-  for (const g of (await slotSource(page, "genre")).split("\n").slice(1)) assert.match(g, /hyper techno|techpara|EDM|hard trance|hardstyle|hard techno|makina|eurobeat/i, "置換候補: " + g);
-  await page.close();
-});
-

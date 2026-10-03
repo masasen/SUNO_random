@@ -529,3 +529,31 @@ test("V6 のランダム出力は短く（2400 文字以内）削られず、ジ
   }
   await page.close();
 });
+
+test("V6 は手入力感のまま、ジャンルを重低音の EDM / hyper techno / techpara 寄りにする", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v6");
+  const genres = (await v6Blocks(page, "main", "line")).map((m) => m.match(/^Genre: (.+?), hand-typed DTM/)[1]);
+  for (const g of genres) assert.match(g, /hyper techno|techpara|EDM|hard trance/i, "ジャンル: " + g);
+  for (const re of [/hyper techno/i, /techpara/i, /EDM/, /hard trance/i]) assert.ok(genres.some((g) => re.test(g)), "ジャンルの候補 " + re);
+  for (const line of await v6Blocks(page, "bpm", "line")) assert.ok(Number(line.match(/^BPM (\d+)/)[1]) >= 128, "BPM: " + line);
+  for (const c of await v6Blocks(page, "core", "line")) {
+    assert.match(c, /kick/i, "キック: " + c.slice(0, 50));
+    assert.match(c, /sub|bass/i, "ベース: " + c.slice(0, 50));
+  }
+  for (const b of await v6Blocks(page, "extra", "block")) {
+    assert.match(b, /^Drums: .*kick/m, "ドラムにキック");
+    assert.match(b, /^Mix: .*(sub|low end)/m, "ミックスで重低音");
+  }
+  for (const b of await v6Blocks(page, "structure", "block")) {
+    assert.match(b, /^Build/m);
+    assert.match(b, /^Drop/m);
+  }
+  const avoid = await slotSource(page, "avoid");
+  assert.match(avoid, /weak|thin kick/i);
+  assert.match(avoid, /soft low end/i);
+  assert.doesNotMatch(avoid, /EDM/, "EDM は禁じない");
+  for (const g of (await slotSource(page, "genre")).split("\n").slice(1)) assert.match(g, /hyper techno|techpara|EDM|hard trance|hardstyle|hard techno|makina|eurobeat/i, "置換候補: " + g);
+  await page.close();
+});
+

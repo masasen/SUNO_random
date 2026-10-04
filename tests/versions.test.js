@@ -52,7 +52,7 @@ test("ヘッダーに V1〜V6 の切り替えボタンがあり、初回は V6",
   const labels = await page.$$eval("#versionSwitch [data-ver]", (els) => els.map((e) => e.textContent.trim()));
   assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6"]);
   assert.match(await page.textContent("#versionBadge"), /^V6/);
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 1);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 11);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -63,7 +63,7 @@ const CASES = [
   { id: "v3", chips: 10, classical: true, analysis: true },
   { id: "v4", chips: 14, classical: true, analysis: true },
   { id: "v5", chips: 12, classical: false, analysis: false },
-  { id: "v6", chips: 1, classical: false, analysis: true, lists: false },
+  { id: "v6", chips: 11, classical: true, analysis: false },
 ];
 
 for (const c of CASES) {
@@ -439,60 +439,115 @@ test("V5 のランダム出力は 3000 文字以内に削られても転調の�
   await page.close();
 });
 
-// ── V6: 刺さった自作曲 Byte by Byte を、作ったときの入力形式（短いキーワードの列挙）に実測を足して完全模倣 ──
+// ── V6: V2 をベースに、歌詞テーマ・サウンド補足・Structure・ボーカル指定・Lyrics 比率を 2 倍に増やした版 ──
 
-// SUNO に残っていた、この曲を作ったときのシンプルモードの説明文（13 キーワード）
-const V6_ORIGINAL = [
-  "中毒性のある曲", "リズムがいい曲", "ノリのいい曲", "テンションが上がる曲", "低音が気持ちいい曲",
-  "女性ボーカル", "ハスキーボイス", "English lyric", "Korean HipHOP", "Dark EDM", "Hyper Techno", "EuroBeat", "8-bit",
-];
-
-async function v6Output(page) {
-  await useVersion(page, "v6");
-  await page.click('#patternChips .chip[data-id="1"]');
-  await page.click("#btnGenerate");
-  return page.inputValue("#outputText");
+async function candidates(page, key) {
+  return page.$eval('[data-slot="' + key + '"]', (card) => {
+    const v = card.querySelector("[data-src]").value.replace(/\r\n?/g, "\n");
+    const parts = card.dataset.kind === "block" ? v.split(/^[ \t]*-{3,}[ \t]*$/m) : v.split("\n");
+    return [...new Set(parts.map((s) => s.trim()).filter(Boolean))];
+  });
 }
 
-test("V6 は Byte by Byte を作ったときの 13 キーワードを元の順番どおりに全部含む", async () => {
+test("V6 は V2 の 11 パターンをそのまま土台にする（BPM / メイン / Core sound はパターン選択で V2 と同じ）", async () => {
   const { page } = await openPage();
-  const out = await v6Output(page);
-  let pos = -1;
-  for (const k of V6_ORIGINAL) {
-    const i = out.indexOf(k + ",");
-    assert.ok(i > pos, "元の順番でキーワードがある: " + k);
-    pos = i;
+  await useVersion(page, "v2");
+  const names = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.textContent));
+  const v2 = [];
+  for (let i = 1; i <= names.length; i++) {
+    await page.click('#patternChips .chip[data-id="' + i + '"]');
+    v2.push(await page.$$eval("[data-picked]", (els) => els.slice(0, 6).map((e) => e.textContent)));
+  }
+  await useVersion(page, "v6");
+  assert.deepEqual(await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.textContent)), names);
+  for (let i = 1; i <= names.length; i++) {
+    await page.click('#patternChips .chip[data-id="' + i + '"]');
+    assert.deepEqual(await page.$$eval("[data-picked]", (els) => els.slice(0, 6).map((e) => e.textContent)), v2[i - 1], "パターン " + i);
   }
   await page.close();
 });
 
-test("V6 は短いキーワードを 1 行ずつ並べる形式で、全行がカンマで終わり、500 文字以内に収まる", async () => {
+test("V6 は歌詞テーマ・サウンド補足・Structure・ボーカル指定・Lyrics 比率が V2 の 2 倍で、V2 の候補を全部含む", async () => {
   const { page } = await openPage();
-  const out = await v6Output(page);
-  assert.ok(out.length <= 500, "長さ " + out.length);
-  for (const line of out.split("\n").filter((l) => l.trim())) {
-    assert.match(line, /,$/, "カンマで終わる: " + line);
-    assert.ok(line.length <= 40, "1 行は短いキーワード: " + line);
+  const keys = ["theme", "extra", "structure", "vocal", "ratio"];
+  await useVersion(page, "v2");
+  const v2 = {};
+  for (const k of keys) v2[k] = await candidates(page, k);
+  await useVersion(page, "v6");
+  for (const k of keys) {
+    const v6 = await candidates(page, k);
+    assert.equal(v6.length, v2[k].length * 2, k + " の候補数");
+    for (const c of v2[k]) assert.ok(v6.includes(c), k + " に V2 の候補が残る: " + c.slice(0, 40));
   }
-  assert.doesNotMatch(out, /Never use:|Avoid:|Structure:|Theme:/, "説明文の見出しを使わない");
-  assert.doesNotMatch(out, /byte by byte/i, "曲名は出力に入れない");
-  for (let i = 0; i < 5; i++) assert.equal(await randomOutput(page), out, "ランダム生成でも同じ 1 曲の模倣");
   await page.close();
 });
 
-test("V6 は実測で分かった音と展開を同じ書き方のキーワードで足す（BPM 180・808・4 つ打ち・モノラル寄り・止め）", async () => {
-  const { page } = await openPage();
-  const out = await v6Output(page);
-  for (const re of [/^BPM 180,$/m, /808/, /4つ打ち/, /モノラル/, /止め/, /^キーはE,$/m]) assert.match(out, re);
-  await page.close();
-});
-
-test("V6 の音源解析メモに、実測値とメタデータ（作成時の入力・SUNO のモデル・タグ）を残す", async () => {
+test("V6 の追加 Structure は Structure: 見出しで始まり、追加ボーカルは女性 1 人に限る", async () => {
   const { page } = await openPage();
   await useVersion(page, "v6");
-  const notes = await page.$$eval("#analysisList .list-item", (els) => els.map((e) => e.textContent));
-  assert.equal(notes.length, 2);
-  const all = notes.join("\n");
-  for (const re of [/180\.0 BPM/, /サブ 37%/, /ステレオ幅 0\.17/, /v5\.5/, /中毒性のある曲/, /Dark EDM, Hyper Techno, Eurobeat/]) assert.match(all, re);
+  for (const s of await candidates(page, "structure")) assert.match(s, /^Structure:\n/);
+  for (const v of await candidates(page, "vocal")) {
+    assert.match(v, /^ONE .*female vocalist only/);
+    assert.match(v, /No .*male/);
+  }
+  for (const r of await candidates(page, "ratio")) assert.match(r, /^Lyrics: /);
+  await page.close();
+});
+
+test("V6 の古文フラグメントは V4 と同じ文面で常に入り、Never use は V4、Avoid は V2 と同じ", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v4");
+  const classical = await page.inputValue("#classicalText");
+  const never = await slotSource(page, "never");
+  await useVersion(page, "v2");
+  const avoid = await slotSource(page, "avoid");
+  await useVersion(page, "v6");
+  assert.equal(await page.inputValue("#classicalText"), classical);
+  assert.equal(await slotSource(page, "never"), never);
+  assert.equal(await slotSource(page, "avoid"), avoid);
+  await page.close();
+});
+
+test("V6 の BPM は V2 の候補に 125 付近と half-time（倍テンポ併記）の候補を足す", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v2");
+  const v2 = await candidates(page, "bpm");
+  await useVersion(page, "v6");
+  const v6 = await candidates(page, "bpm");
+  for (const b of v2) assert.ok(v6.includes(b), "V2 の BPM が残る: " + b);
+  const near125 = v6.filter((b) => !/half-time/i.test(b) && /\b12[0-9]\b/.test(b));
+  assert.ok(near125.length >= 4, "125 付近の候補: " + near125.length);
+  const half = v6.filter((b) => /half-time/i.test(b));
+  const v2Half = v2.filter((b) => /half-time/i.test(b));
+  assert.ok(half.length >= v2Half.length + 5, "half-time の候補: " + half.length);
+  for (const b of half) {
+    const m = b.match(/BPM (\d+)(?:-(\d+))? half-time, double-time (\d+)(?:-(\d+))? energy\./);
+    assert.ok(m, "half-time の書式: " + b);
+    const lo = Number(m[1]), hi = Number(m[2] || m[1]), dlo = Number(m[3]), dhi = Number(m[4] || m[3]);
+    assert.ok(dlo === lo * 2 && dhi === hi * 2, "倍テンポが 2 倍: " + b);
+  }
+  assert.ok(half.some((b) => /double-time 12\d/.test(b)), "倍テンポが 125 付近の half-time もある");
+  await page.close();
+});
+
+test("V6 は全パターン × 全サウンド補足で 3000 文字以内に収まり、古文フラグメントは削られない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v6");
+  const extras = await candidates(page, "extra");
+  for (let i = 1; i <= 11; i++) {
+    await page.click('#patternChips .chip[data-id="' + i + '"]');
+    for (const e of extras) {
+      await page.evaluate((v) => {
+        const slot = document.querySelector('[data-slot="extra"] [data-src]');
+        slot.value = v;
+      }, e);
+      await page.click('[data-slot="extra"] [data-dice]');
+      await page.click("#btnGenerate");
+      const out = await page.inputValue("#outputText");
+      assert.ok(out.length <= 3000, "パターン " + i + " の長さ " + out.length);
+      assert.ok(out.includes(CLASSICAL));
+      assert.match(out, /^Structure:$/m);
+    }
+  }
   await page.close();
 });

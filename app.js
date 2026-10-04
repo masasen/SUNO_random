@@ -84,32 +84,21 @@ const VERSIONS = [
     }),
   },
   {
-    id: "v6", badge: "V6 / KEYWORD REMAKE", bpmTitle: "BPM", swapFrom: "", swapEnabled: false,
-    extrasFirst: false, dropOrder: [], ownLyrics: true,
-    hints: Object.assign({}, HINT_DJ, {
-      pattern: "刺さった自作曲（#62-Byte_by_Byte.mp3、SUNO v5.5）の完全模倣です。この曲はシンプルモードの説明欄に短いキーワードを 13 個並べただけで作られていたので、長い説明文をやめて同じ「短いキーワードを 1 行ずつ、末尾カンマで並べる」形式に戻し、元の 13 キーワードを元の順番のまま残して、音源の実測で分かった音と展開を同じ書き方で足しています（500 文字以内）。",
-      genre: "この版はキーワードの並びを崩さないため、ジャンル置換は使いません。",
-      main: "この版では使いません（キーワードは補足の欄にまとめています）。",
-      core: "この版では使いません（キーワードは補足の欄にまとめています）。",
-      extra: "元の 13 キーワード（気分 / 声・言語・ジャンル）と、実測で分かった音（キー・808・4 つ打ち・ベースの跳ね方・モノラル寄り・8bit のアルペジオ）の 3 段落。元の順番を崩さないよう 1 候補にまとめています。",
-      theme: "",
-      never: "",
-      avoid: "",
-      trim: "500 文字以内のキーワードの列挙なので、3000 文字に届くことはありません。",
-      analysis: "先頭はメタデータ（作成時の入力・SUNO が書いたスタイルタグと歌詞の構成・モデル）。続く 1 件は音源の実測値（librosa / demucs / Whisper）です。",
+    id: "v6", badge: "V6 / SIMPLE MODE ×2", bpmTitle: "BPM", swapFrom: "Future Bass", swapEnabled: true,
+    extrasFirst: true, dropOrder: DROP_ORDER_SETS,
+    hints: Object.assign({}, HINT_V12, {
+      pattern: "V2 の 11 パターンをそのまま土台にしています。選ぶと BPM / メイン / Core sound / 補足 / Structure / ボーカル の各候補欄が、そのパターンの内容で先頭に差し込まれます（既存の候補は残ります）。サウンド補足・Structure・ボーカル指定・Lyrics 比率は V2 の 2 倍の候補を持ち、パターンを選ばずにランダム生成すると組み合わせが広がります。",
+      bpm: "1 行 1 候補。V2 の候補に、125 付近（122〜132）と half-time（<code>BPM 62-64 half-time, double-time 124-128 energy.</code> のように倍テンポを併記）の候補を足しています。",
+      theme: "V4 の共通テーマ 46 件 ＋ V6 の追加テーマ 46 件（V2 の 2 倍）。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
     }),
   },
-
-
-
-
 ];
 
 let version = null;
 let data = null;
 
-// 版のデータに V4 の共通データを重ねる。版が自前で持つ Never use / Avoid（V3 の両方、V1 / V2 の Avoid）はそちらを優先する。
-// ownLyrics の版（V5 / V6）は歌詞テーマ・古文も自前のものだけを使う。borrow の版は指定のキーを別の版のデータから借りる
+// 版のデータに V4 の共通データを重ねる。版が自前の themes を持つ（V6）ときは共通テーマの後ろに足す。版が自前で持つ Never use / Avoid（V3 の両方、V1 / V2 の Avoid）はそちらを優先する。
+// ownLyrics の版（V5）は歌詞テーマ・古文も自前のものだけを使う。borrow の版は指定のキーを別の版のデータから借りる
 function resolveData(id) {
   const own = window.PROMPT_DATA[id];
   const def = VERSIONS.find((v) => v.id === id);
@@ -119,8 +108,9 @@ function resolveData(id) {
     return Object.assign({}, own, borrowed, { themes: uniq(own.patterns.map((p) => p.theme).filter(Boolean).concat(own.themes)) });
   }
   const shared = window.PROMPT_DATA[SHARED_SOURCE];
+  const ownThemes = id === SHARED_SOURCE ? [] : own.themes || [];
   return Object.assign({}, own, {
-    themes: uniq(shared.patterns.map((p) => p.theme).filter(Boolean).concat(shared.themes)),
+    themes: uniq(shared.patterns.map((p) => p.theme).filter(Boolean).concat(shared.themes, ownThemes)),
     never: own.never || shared.never,
     avoid: own.avoid || shared.avoid,
     classical: shared.classical,
@@ -198,9 +188,9 @@ function defaultSources() {
     main:      uniq(patternValues("main")).join("\n"),
     genre:     [NO_SWAP].concat(data.genreSwaps).join("\n"),
     core:      uniq(patternValues("core")).join("\n"),
-    extra:     uniq(patternValues("extra")).join(BLOCK_SEP),
-    structure: uniq(patternValues("structure")).join(BLOCK_SEP),
-    vocal:     uniq(patternValues("vocal")).join(BLOCK_SEP),
+    extra:     uniq(patternValues("extra").concat(data.extras || [])).join(BLOCK_SEP),
+    structure: uniq(patternValues("structure").concat(data.structures || [])).join(BLOCK_SEP),
+    vocal:     uniq(patternValues("vocal").concat(data.vocals || [])).join(BLOCK_SEP),
     ratio:     mergedValues("ratio", data.lyricsRatios).join("\n"),
     theme:     data.themes.join(BLOCK_SEP),
     never:     uniq(data.never).join("\n"),

@@ -8,7 +8,7 @@ const NO_CORE = "(Core sound を入れない)";
 const ACTIVE_VERSION_KEY = "suno_random_active_version";
 
 // ── 版の定義 ──
-// 候補データは prompt-data-v1〜v4.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
+// 候補データは prompt-data-v1〜v7.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
 
 // 歌詞テーマ・古文フラグメント・Never use / Avoid は V4 のデータを正本として全版で共通に使う
 const SHARED_SOURCE = "v4";
@@ -43,6 +43,8 @@ const DROP_ORDER_SETS = [/^keep\b/i, /^future bass (is|remains)\b/i, /sampl(e|in
 const DROP_ORDER_DJ = [/^mix\b/i, /^fx\b/i, /^drops?\b/i, /^samples?\b/i];
 // V5 は念押し → 副ジャンル → ジャンルの線引き → ミックス → ドロップ → サンプリングの順に落とし、グリッチ処理・コンセプト・Stage / Phase・リズムの切り替えは最後まで残す
 const DROP_ORDER_V5 = [/^keep\b/i, /\b(is|remains) secondary\b/i, /^electronic, not\b/i, /^mix\b/i, /^drops?\b/i, /^samples?\b/i];
+// V7 は V2 形式とグリッチ系の両方の段落を持つので、念押し → 副ジャンル → ミックス → ドロップ → サンプリングの順に落とす
+const DROP_ORDER_V7 = [/^keep\b/i, /\b(is|remains) (secondary|contrast)\b/i, /^mix\b/i, /^drops?\b/i, /sampl(e|ing)/i];
 
 const VERSIONS = [
   {
@@ -92,6 +94,22 @@ const VERSIONS = [
       theme: "V4 の共通テーマ 46 件 ＋ V6 の追加テーマ 46 件（V2 の 2 倍）。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
     }),
   },
+  {
+    id: "v7", badge: "V7 / HYPER TECHNO #06 × #07", bpmTitle: "BPM・キー", swapFrom: "Future Bass", swapEnabled: true,
+    extrasFirst: true, dropOrder: DROP_ORDER_V7, swapCaseSensitive: true,
+    hints: Object.assign({}, HINT_V12, {
+      pattern: "No.1〜No.11 は V6（V2 の 11 パターン）。No.12〜No.33 は HyperTechno #06 / #07 の 22 曲で、入力プロンプト（gpt_description_prompt）のメイン行が <code>Genre:</code> / <code>Main genre:</code> で始まる V6 に無い型なので、1 曲 1 ベースにしています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Never use / Avoid（古文の文面を持つ曲は古文も）が、その曲の入力どおりに差し替わります。",
+      genre: "メイン 1 行目の <code>Future Bass</code>（大文字小文字を区別）を、下の候補からランダムに選んだ 1 語で置き換えます。V2 形式の入力で使われていた <code>North East Makina x Anime opening</code> / <code>DJ-style x Addictive tracks x glitch</code> を候補に足しています。グリッチ系メイン行の小文字の <code>future bass EDM MiX</code> は置き換えません。",
+      bpm: "1 行 1 候補。V6 の候補に、22 曲の BPM・キー（<code>BPM 158, D major.</code> など）を足しています。",
+      main: "1 行 1 候補。V6 のメインに、22 曲のメインと、V2 形式 5 曲（Cute Face, Sharp Game / One Little Night / 朝よ、あの席にも / ふたつの影 / 好きって言ってよ）のメインの書き換えを足しています。",
+      core: "1 行 1 候補（長文 1 行）。V6 の Core sound に 22 曲の Core sound を足しています（V2 形式の 6 曲の Core sound は V6 に既にあるものでした）。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。",
+      extra: "V6 の補足に、22 曲の補足（Glitch FX / Drops / Mix / Samples / Phase / Call & response など）と、V2 形式の書き換え 3 件を足しています。<b><code>---</code> だけの行で区切って 1 候補</b>。3000 文字を超えたときは Keep → 副ジャンル → Mix → Drops → Samples の順に段落が削られます。",
+      theme: "V4 の共通テーマ ＋ V6 の追加テーマ ＋ 28 曲のテーマ。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
+      never: "28 曲の入力に出てくる Never use をすべて候補にしています（区切りを統一し重複を除いたもの）。パターンを選ぶとその曲の行になります。",
+      avoid: "28 曲の入力に出てくる Avoid をすべて候補にしています。パターンを選ぶとその曲の行になります。",
+      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Mix → Drops → Samples の順に落とします。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。",
+    }),
+  },
 ];
 
 let version = null;
@@ -113,7 +131,7 @@ function resolveData(id) {
     themes: uniq(shared.patterns.map((p) => p.theme).filter(Boolean).concat(shared.themes, ownThemes)),
     never: own.never || shared.never,
     avoid: own.avoid || shared.avoid,
-    classical: shared.classical,
+    classical: own.classical || shared.classical,
   });
 }
 
@@ -185,9 +203,9 @@ function mergedValues(key, extras) {
 function defaultSources() {
   return {
     bpm:       uniq(patternValues("bpm").concat(data.bpmExtra)).join("\n"),
-    main:      uniq(patternValues("main")).join("\n"),
+    main:      uniq(patternValues("main").concat(data.mains || [])).join("\n"),
     genre:     [NO_SWAP].concat(data.genreSwaps).join("\n"),
-    core:      uniq(patternValues("core")).join("\n"),
+    core:      uniq(patternValues("core").concat(data.cores || [])).join("\n"),
     extra:     uniq(patternValues("extra").concat(data.extras || [])).join(BLOCK_SEP),
     structure: uniq(patternValues("structure").concat(data.structures || [])).join(BLOCK_SEP),
     vocal:     uniq(patternValues("vocal").concat(data.vocals || [])).join(BLOCK_SEP),
@@ -234,6 +252,16 @@ function rollAll(respectPins) {
     if (respectPins && slots[key].pinned) { ensurePicked(key); continue; }
     rollSlot(key);
   }
+  classicalPicked = pickOne(toBlocks($("#classicalText").value));
+}
+
+// 古文フラグメントは常に 1 つ入る。--- 区切りで複数の文面を持つ版（V7）は、その中から 1 つを選んで保つ
+let classicalPicked = "";
+
+function ensureClassical() {
+  const list = toBlocks($("#classicalText").value);
+  if (!list.includes(classicalPicked)) classicalPicked = pickOne(list);
+  return classicalPicked;
 }
 
 // ── 出力の組み立て ──
@@ -243,7 +271,7 @@ function collectState() {
   for (const key of SLOT_KEYS) ensurePicked(key);
 
   // 古文フラグメントがある版では、テーマの Chorus 行を古文指示の後ろへ回す
-  const classical = data.classical ? $("#classicalText").value.trim() : "";
+  const classical = data.classical ? ensureClassical() : "";
   const themeLines = slots.theme.picked ? slots.theme.picked.split("\n") : [];
   const isChorus = (l) => /^chorus\s*:/i.test(l.trim());
   const themeBody = classical ? themeLines.filter((l) => !isChorus(l)).join("\n").trim() : slots.theme.picked;
@@ -273,7 +301,8 @@ function applyGenreSwap(state) {
   const to = slots.genre.picked;
   if (!$("#swapEnabled").checked || !from || !to || to === NO_SWAP) return { applied: false };
 
-  const re = new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  // V7 はグリッチ系のメイン行に小文字の "future bass EDM MiX" があるので、大文字小文字を区別して V2 形式の "Future Bass" だけを置き換える
+  const re = new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), version.swapCaseSensitive ? "g" : "gi");
   let applied = false;
   const swap = (s) => {
     const out = String(s || "").replace(re, to);
@@ -437,8 +466,8 @@ async function copyText(text) {
 
 const PATTERN_FIELDS = ["bpm", "main", "core", "extra", "structure", "vocal"];
 // パターンが持っている場合だけ差し替える。持たないパターンでは現在の選択を残す
-const PATTERN_OPTIONAL_FIELDS = ["ratio", "theme"];
-const FIELD_LABELS = { ratio: "Lyrics 比率", theme: "テーマ" };
+const PATTERN_OPTIONAL_FIELDS = ["ratio", "theme", "never", "avoid"];
+const FIELD_LABELS = { ratio: "Lyrics 比率", theme: "テーマ", never: "Never use", avoid: "Avoid" };
 
 function hoistCandidate(key, value) {
   if (!value) { setPicked(key, ""); return; }
@@ -456,9 +485,13 @@ function applyPattern(pattern) {
   }
   const optional = PATTERN_OPTIONAL_FIELDS.filter((field) => pattern[field]);
   for (const field of optional) hoistCandidate(field, pattern[field]);
+  if (pattern.classical) {
+    $("#classicalText").value = [pattern.classical].concat(toBlocks($("#classicalText").value).filter((v) => v !== pattern.classical)).join(BLOCK_SEP);
+    classicalPicked = pattern.classical;
+  }
   $$("#patternChips .chip").forEach((c) => c.classList.toggle("active", Number(c.dataset.id) === pattern.id));
   saveState();
-  const extraLabel = optional.map((f) => " / " + FIELD_LABELS[f]).join("");
+  const extraLabel = optional.map((f) => " / " + FIELD_LABELS[f]).join("") + (pattern.classical ? " / 古文" : "");
   setMsg(pattern.name + " を読み込みました。" + version.bpmTitle + " / メイン / Core sound / 補足 / Structure / ボーカル" + extraLabel + " を差し替え済みです。", "ok");
 }
 
@@ -573,6 +606,7 @@ function saveNow() {
       dataVersion: promptDataVersion(),
       snapshot: currentSnapshot(),
       picked: SLOT_KEYS.reduce((acc, k) => (acc[k] = slots[k].picked, acc), {}),
+      classicalPicked,
       output: $("#outputText").value,
       autoTrim: $("#optAutoTrim").checked,
       autoCopy: $("#optAutoCopy").checked,
@@ -597,6 +631,7 @@ function loadState() {
   if (saved.dataVersion !== promptDataVersion()) return false;
   restoreSnapshot(saved.snapshot);
   if (saved.picked) for (const key of SLOT_KEYS) setPicked(key, saved.picked[key] || "");
+  classicalPicked = typeof saved.classicalPicked === "string" ? saved.classicalPicked : "";
   if (typeof saved.output === "string") $("#outputText").value = saved.output;
   return true;
 }
@@ -605,6 +640,7 @@ function loadDefaults() {
   const src = defaultSources();
   for (const key of SLOT_KEYS) { slots[key].src.value = src[key]; setPin(key, false); setPicked(key, ""); }
   $("#classicalText").value = data.classical || "";
+  classicalPicked = "";
   $("#swapFrom").value = version.swapFrom;
   $("#swapEnabled").checked = version.swapEnabled;
   $("#swapAll").checked = false;
@@ -827,6 +863,7 @@ function switchVersion(id) {
   renderPatternChips();
   renderAnalysis();
   for (const key of SLOT_KEYS) { setPin(key, false); setPicked(key, ""); }
+  classicalPicked = "";
   $("#outputText").value = "";
   $("#trimNote").textContent = "";
   if (!loadState()) loadDefaults();

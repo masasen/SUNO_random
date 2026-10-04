@@ -47,12 +47,12 @@ async function randomOutput(page) {
   return page.inputValue("#outputText");
 }
 
-test("ヘッダーに V1〜V6 の切り替えボタンがあり、初回は V6", async () => {
+test("ヘッダーに V1〜V7 の切り替えボタンがあり、初回は V7", async () => {
   const { page, errors } = await openPage();
   const labels = await page.$$eval("#versionSwitch [data-ver]", (els) => els.map((e) => e.textContent.trim()));
-  assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6"]);
-  assert.match(await page.textContent("#versionBadge"), /^V6/);
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 11);
+  assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6", "V7"]);
+  assert.match(await page.textContent("#versionBadge"), /^V7/);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 33);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -64,6 +64,7 @@ const CASES = [
   { id: "v4", chips: 14, classical: true, analysis: true },
   { id: "v5", chips: 12, classical: false, analysis: false },
   { id: "v6", chips: 11, classical: true, analysis: false },
+  { id: "v7", chips: 33, classical: true, analysis: false },
 ];
 
 for (const c of CASES) {
@@ -549,5 +550,142 @@ test("V6 は全パターン × 全サウンド補足で 3000 文字以内に収�
       assert.match(out, /^Structure:$/m);
     }
   }
+  await page.close();
+});
+
+// ── V7: V6 に HyperTechno #06 / #07 の 28 曲の入力プロンプト（gpt_description_prompt）で不足していた要素を足した版 ──
+
+const HT = JSON.parse(fs.readFileSync(path.join(ROOT, "tests/fixtures/hypertechno-prompts.json"), "utf8"));
+
+function neverWords(s) {
+  return [...new Set(s.replace(/\.(?=[,、]|[^\s\d])/g, ",").split(/[,、]/)
+    .map((w) => w.trim().replace(/\.$/, "").replace(/^suger$/, "sugar")).filter(Boolean))].sort();
+}
+
+// 入力プロンプトを候補欄の単位に分ける
+function parsePrompt(prompt) {
+  const paras = prompt.replace(/\u3000/g, " ").replace(/\bAmine\b/g, "Anime").replace(/\r/g, "").trim()
+    .split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  const c = { extra: [], theme: [] };
+  let afterStructure = false;
+  for (const p of paras) {
+    if (/^BPM\b/.test(p) && !c.bpm) c.bpm = p.replace(/\s+/g, " ");
+    else if (!c.main) c.main = p;
+    else if (/^Core sound:/.test(p)) c.core = p;
+    else if (/^Structure:/.test(p)) { c.structure = p; afterStructure = true; }
+    else if (/^ONE /.test(p)) c.vocal = p;
+    else if (/^Lyrics:/.test(p)) c.ratio = p;
+    else if (/^Occasionally generate/.test(p)) c.classical = p;
+    else if (/^Never use:/.test(p)) c.never = neverWords(p.replace(/^Never use:\s*/, ""));
+    else if (/^Avoid:/.test(p)) c.avoid = p;
+    else if (afterStructure) c.theme.push(p);
+    else c.extra.push(p);
+  }
+  c.extra = c.extra.join("\n\n");
+  c.theme = c.theme.join("\n");
+  c.base = /^(Genre|Main genre):/.test(c.main);
+  return c;
+}
+
+const HT_PARSED = HT.map((h) => Object.assign({ title: h.title }, parsePrompt(h.prompt)));
+
+test("V7 の fixture は 28 曲で、ベース 22 曲（Genre: / Main genre: 形式）と書き換え候補 6 曲（V2 形式）に分かれる", () => {
+  assert.equal(HT_PARSED.length, 28);
+  assert.equal(HT_PARSED.filter((c) => c.base).length, 22);
+  for (const c of HT_PARSED) for (const k of ["bpm", "main", "core", "structure", "vocal", "ratio", "theme", "never", "avoid"]) assert.ok(c[k] && c[k].length, c.title + " の " + k);
+});
+
+test("V7 は V6 の候補を全部持つ（全スロット・古文・パターン）", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v6");
+  const v6 = {};
+  for (const k of SLOT_KEYS_ALL) v6[k] = await candidates(page, k);
+  const v6Chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.textContent));
+  const v6Classical = await page.inputValue("#classicalText");
+  await useVersion(page, "v7");
+  for (const k of SLOT_KEYS_ALL) {
+    const v7 = await candidates(page, k);
+    for (const c of v6[k]) assert.ok(v7.includes(c), k + " に V6 の候補が残る: " + c.slice(0, 50));
+  }
+  const v7Chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.textContent));
+  assert.deepEqual(v7Chips.slice(0, 11), v6Chips);
+  assert.ok(classicalBlocks(await page.inputValue("#classicalText")).includes(v6Classical.trim()));
+  await page.close();
+});
+
+const SLOT_KEYS_ALL = ["bpm", "main", "genre", "core", "extra", "structure", "vocal", "ratio", "theme", "never", "avoid"];
+
+function classicalBlocks(v) {
+  return v.replace(/\r\n?/g, "\n").split(/^[ \t]*-{3,}[ \t]*$/m).map((s) => s.trim()).filter(Boolean);
+}
+
+async function pickedAll(page) {
+  return page.$$eval("[data-slot]", (cards) => Object.fromEntries(cards.map((c) => [c.dataset.slot, c.querySelector("[data-picked]").textContent])));
+}
+
+test("V7 のベース 22 曲はパターンとして選べ、BPM〜Avoid が元の入力プロンプトどおりに入る", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v7");
+  const chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => ({ id: e.dataset.id, name: e.textContent })));
+  for (const c of HT_PARSED.filter((x) => x.base)) {
+    const chip = chips.find((ch) => ch.name.replace(/^No\.\d+ /, "") === c.title);
+    assert.ok(chip, "パターンがある: " + c.title);
+    await page.click('#patternChips .chip[data-id="' + chip.id + '"]');
+    const p = await pickedAll(page);
+    for (const k of ["bpm", "main", "core", "extra", "structure", "vocal", "ratio", "theme", "avoid"]) assert.equal(p[k], c[k], c.title + " の " + k);
+    assert.deepEqual(neverWords(p.never), c.never, c.title + " の never");
+    await page.click("#btnGenerate");
+    const out = await page.inputValue("#outputText");
+    assert.ok(out.length <= 3000, c.title + " の長さ " + out.length);
+    assert.ok(out.includes(CLASSICAL), c.title + " も古文フラグメントは常に入る");
+    if (c.classical) assert.ok(out.includes(c.classical), c.title + " は自分の古文指示を使う");
+    assert.ok(out.includes(c.main) && out.includes(c.structure.split("\n")[1]), c.title + " のメインと Structure は残る");
+  }
+  await page.close();
+});
+
+test("V7 の書き換え候補 6 曲は、各要素が候補欄（メインは候補またはジャンル置換、Core sound は Core 欄）に入る", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v7");
+  const cand = {};
+  for (const k of SLOT_KEYS_ALL) cand[k] = await candidates(page, k);
+  const classical = classicalBlocks(await page.inputValue("#classicalText"));
+  for (const c of HT_PARSED.filter((x) => !x.base)) {
+    for (const k of ["bpm", "main", "core", "extra", "structure", "vocal", "ratio", "theme", "avoid"]) {
+      assert.ok(cand[k].includes(c[k]), c.title + " の " + k + ": " + c[k].slice(0, 60));
+    }
+    assert.ok(cand.never.some((n) => neverWords(n).join("|") === c.never.join("|")), c.title + " の never");
+    if (c.classical) assert.ok(classical.includes(c.classical), c.title + " の古文");
+  }
+  for (const w of ["big beat", "North East Makina x Anime opening", "hyperpop", "DJ-style x Addictive tracks x glitch"]) {
+    assert.ok(cand.genre.includes(w), "ジャンル置換の候補: " + w);
+  }
+  await page.close();
+});
+
+test("V7 の古文フラグメントは複数の文面から 1 つだけ入り、ランダム生成でも常に入る", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v7");
+  const blocks = classicalBlocks(await page.inputValue("#classicalText"));
+  assert.ok(blocks.length >= 3, "古文の候補数 " + blocks.length);
+  const seen = new Set();
+  for (let i = 0; i < 25; i++) {
+    const out = await randomOutput(page);
+    const hits = blocks.filter((b) => out.includes(b));
+    assert.equal(hits.length, 1, "古文は 1 つだけ");
+    seen.add(hits[0]);
+  }
+  assert.ok(seen.size >= 2, "ランダムで文面が変わる");
+  await page.close();
+});
+
+test("V7 のパターンを選んだあとの生成ボタンは、同じ古文フラグメントを保つ", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v7");
+  await page.click('#patternChips .chip[data-id="1"]');
+  await page.click("#btnGenerate");
+  const a = await page.inputValue("#outputText");
+  await page.click("#btnGenerate");
+  assert.equal(await page.inputValue("#outputText"), a);
   await page.close();
 });

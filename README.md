@@ -1,13 +1,13 @@
 # SUNO_random
 
-SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリです。画面上部の `V1` / `V2` / `V3` / `V4` / `V5` / `V6` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V6 です。
+SUNO Simple Prompt Builder V1〜V7 の GitHub Pages 公開用リポジトリです。画面上部の `V1` / `V2` / `V3` / `V4` / `V5` / `V6` / `V7` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V7 です。
 
 ## ファイルの役割
 
 - `index.html`: 画面の外枠とスタイル。候補データの更新時は編集不要です。
-- `prompt-data-v1.js` 〜 `prompt-data-v6.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
+- `prompt-data-v1.js` 〜 `prompt-data-v7.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
 - `app.js`: 版の切り替え、ランダム抽選、組み立て、保存などの処理。版ごとの説明文・ジャンル置換の既定値・自動トリムで削る順もここにあります。
-- `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。
+- `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。`tests/fixtures/hypertechno-prompts.json` は V7 の元にした 28 曲の入力プロンプトです。
 
 ## 版ごとの違い
 
@@ -19,6 +19,7 @@ SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリで�
 | V4 | StreetDanceEDM #07 / #08 の 14 曲 | 共通の 1 行 | あり |
 | V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
 | V6 | V2 の 11 パターン（歌詞テーマ・補足・Structure・ボーカル・比率は V2 の 2 倍） | Never use は V4 と共通、Avoid は V2 と同じ 1 行 | なし |
+| V7 | V6 の 11 パターン ＋ HyperTechno #06 / #07 の 22 曲（ほか 6 曲は候補欄へ） | 28 曲の入力に出てくる行をすべて候補に持つ | なし |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4・V6 で共通です（V6 はさらに追加テーマを持ちます）。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -38,6 +39,17 @@ SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリで�
 - 歌詞テーマ・サウンド補足・Structure・ボーカル指定・Lyrics 比率は V2 の 2 倍です（テーマ 46 → 92、補足・Structure・ボーカル 11 → 22、比率 9 → 18）。追加分はパターンに紐づけず `prompt-data-v6.js` の `THEME_MORE` / `EXTRA_MORE` / `STRUCTURE_MORE` / `VOCAL_MORE` / `LYRICS_RATIOS` に持ち、ランダム生成で V2 の候補と混ざって抽選されます。
 - 古文フラグメントは V4 と同じ文面で常に入ります。
 - BPM は V2 の候補に、125 付近（`BPM 122-128.` など 5 行）と half-time（`BPM 62-64 half-time, double-time 124-128 energy.` 〜 `BPM 90-94 half-time, double-time 180-188 energy.` の 7 行）を足しています。
+
+## V7 の書き方
+
+- V6 に、`work4/mp3/HyperTechno/#06` と `#07` にある 28 曲の TXT から、**ユーザーが入力したプロンプト**（`metadata.gpt_description_prompt`）で V6 に無かった要素を足しています。SUNO が変換したタグ（`metadata.tags`）は使っていません。`#06/Remove` には TXT が無いので対象外です。
+- 振り分けは入力プロンプトの形で決めています。
+  - **ベース（22 曲）**: メイン行が `Genre:` / `Main genre:` で始まる、V6 に無い型。1 曲 1 パターン（No.12〜No.33）にして、BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Never use / Avoid（古文の文面を持つ曲は古文も）を入力どおりに持たせています。
+  - **書き換え候補（6 曲）**: `Early-2000s Japanese club Hyper Techno …` で始まる V2 形式の書き換え。V6 に無い要素だけを各候補欄に足しています（メイン 5 件、補足 3 件、Structure 1 件、テーマ 5 件、Never use / Avoid の行、古文 1 件。`Future Bass` を差し替えた語 `North East Makina x Anime opening` / `DJ-style x Addictive tracks x glitch` はジャンル置換の候補へ）。
+  - **Core sound**: 6 曲の Core sound はすべて V6 に既にあったので足していません。22 曲の Core sound はパターン経由で Core 欄の候補に入ります。
+- 古文フラグメントは常に入ります。V7 は `---` 区切りで 4 つの文面を持ち、ランダム生成のたびに 1 つ選びます（パターンが文面を持つときはそれを使います）。
+- ジャンル置換は大文字小文字を区別します（グリッチ系メイン行の小文字の `future bass EDM MiX` は置き換えません）。
+- 入力の表記ゆれは直しています: 全角スペース → 半角、`Amine` → `Anime`、`suger` → `sugar`、Never use の区切りを `, ` にそろえて重複を除去。
 
 ## 候補データの更新
 

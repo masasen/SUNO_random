@@ -377,6 +377,7 @@ textarea::placeholder { color: var(--fg-faint); }
 /* ── パターンチップ ── */
 
 .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+#patternChips { max-height: 320px; overflow-y: auto; padding-right: 4px; }
 
 .chip {
   font-size: 12px;
@@ -495,7 +496,7 @@ textarea::placeholder { color: var(--fg-faint); }
   <div class="head-inner">
     <div class="title-row">
       <h1><span class="mark"></span>SUNO Simple Prompt Builder</h1>
-      <span class="badge" id="versionBadge">V7 / HYPER TECHNO #06 × #07</span>
+      <span class="badge" id="versionBadge">V8 / V7 × V5 CORE FUSION</span>
       <div class="ver-switch" id="versionSwitch" role="group" aria-label="プロンプトの版">
         <button data-ver="v1">V1</button>
         <button data-ver="v2">V2</button>
@@ -504,6 +505,7 @@ textarea::placeholder { color: var(--fg-faint); }
         <button data-ver="v5">V5</button>
         <button data-ver="v6">V6</button>
         <button data-ver="v7">V7</button>
+        <button data-ver="v8">V8</button>
       </div>
       <div class="actions">
         <button class="btn-primary" id="btnGenerate">生成</button>
@@ -661,7 +663,7 @@ textarea::placeholder { color: var(--fg-faint); }
 
     <section class="card" id="classicalCard">
       <div class="card-head"><h2><span class="num">10</span>古文フラグメント（常時固定）</h2></div>
-      <p class="hint">テーマに関わらず必ず出力へ入ります（V1〜V4 共通で文面の初期値は prompt-data-v4.js。V5 では使いません）。テーマの <code>Chorus:</code> 行はこの指示の後ろへ回されます。文面だけ編集できます。V7 は <code>---</code> だけの行で区切った複数の文面を持ち、ランダム生成のたびに 1 つ選びます（パターンが文面を持つときはそれ）。</p>
+      <p class="hint">テーマに関わらず必ず出力へ入ります（V1〜V4 共通で文面の初期値は prompt-data-v4.js。V5 では使いません）。テーマの <code>Chorus:</code> 行はこの指示の後ろへ回されます。文面だけ編集できます。V7 / V8 は <code>---</code> だけの行で区切った複数の文面を持ち、ランダム生成のたびに 1 つ選びます（パターンが文面を持つときはそれ）。</p>
       <textarea id="classicalText" rows="4"></textarea>
     </section>
 
@@ -752,8 +754,8 @@ textarea::placeholder { color: var(--fg-faint); }
   </div>
 </main>
 <script>
-// 更新直後も最新の候補データを取得する。HTMLは画面、app.jsは処理、prompt-data-v1〜v7.jsは各版の候補データ。
-const DATA_FILES = ["prompt-data-v1.js", "prompt-data-v2.js", "prompt-data-v3.js", "prompt-data-v4.js", "prompt-data-v5.js", "prompt-data-v6.js", "prompt-data-v7.js"];
+// 更新直後も最新の候補データを取得する。HTMLは画面、app.jsは処理、prompt-data-v1〜v8.jsは各版の候補データ。
+const DATA_FILES = ["prompt-data-v1.js", "prompt-data-v2.js", "prompt-data-v3.js", "prompt-data-v4.js", "prompt-data-v5.js", "prompt-data-v6.js", "prompt-data-v7.js", "prompt-data-v8.js"];
 function showLoadError(file) {
   const message = document.querySelector("#msg");
   message.textContent = file + " を読み込めません。ページを再読み込みしてください。";

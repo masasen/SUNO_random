@@ -8,7 +8,7 @@ const NO_CORE = "(Core sound を入れない)";
 const ACTIVE_VERSION_KEY = "suno_random_active_version";
 
 // ── 版の定義 ──
-// 候補データは prompt-data-v1〜v7.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
+// 候補データは prompt-data-v1〜v8.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
 
 // 歌詞テーマ・古文フラグメント・Never use / Avoid は V4 のデータを正本として全版で共通に使う
 const SHARED_SOURCE = "v4";
@@ -45,6 +45,21 @@ const DROP_ORDER_DJ = [/^mix\b/i, /^fx\b/i, /^drops?\b/i, /^samples?\b/i];
 const DROP_ORDER_V5 = [/^keep\b/i, /\b(is|remains) secondary\b/i, /^electronic, not\b/i, /^mix\b/i, /^drops?\b/i, /^samples?\b/i];
 // V7 は V2 形式とグリッチ系の両方の段落を持つので、念押し → 副ジャンル → ミックス → ドロップ → サンプリングの順に落とす
 const DROP_ORDER_V7 = [/^keep\b/i, /\b(is|remains) (secondary|contrast)\b/i, /^mix\b/i, /^drops?\b/i, /sampl(e|ing)/i];
+// V8 は V5 由来のベースも持つので、V7 の順に V5 の「Electronic, not」を足す。Modulation（転調）は最後まで残る
+const DROP_ORDER_V8 = [/^keep\b/i, /\b(is|remains) (secondary|contrast)\b/i, /^electronic, not\b/i, /^mix\b/i, /^drops?\b/i, /sampl(e|ing)/i];
+
+const HINT_V7 = Object.assign({}, HINT_V12, {
+  pattern: "No.1〜No.11 は V6（V2 の 11 パターン）。No.12〜No.33 は HyperTechno #06 / #07 の 22 曲で、入力プロンプト（gpt_description_prompt）のメイン行が <code>Genre:</code> / <code>Main genre:</code> で始まる V6 に無い型なので、1 曲 1 ベースにしています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Never use / Avoid（古文の文面を持つ曲は古文も）が、その曲の入力どおりに差し替わります。",
+  genre: "メイン 1 行目の <code>Future Bass</code>（大文字小文字を区別）を、下の候補からランダムに選んだ 1 語で置き換えます。V2 形式の入力で使われていた <code>North East Makina x Anime opening</code> / <code>DJ-style x Addictive tracks x glitch</code> を候補に足しています。グリッチ系メイン行の小文字の <code>future bass EDM MiX</code> は置き換えません。",
+  bpm: "1 行 1 候補。V6 の候補に、22 曲の BPM・キー（<code>BPM 158, D major.</code> など）を足しています。",
+  main: "1 行 1 候補。V6 のメインに、22 曲のメインと、V2 形式 5 曲（Cute Face, Sharp Game / One Little Night / 朝よ、あの席にも / ふたつの影 / 好きって言ってよ）のメインの書き換えを足しています。",
+  core: "1 行 1 候補（長文 1 行）。V6 の Core sound に 22 曲の Core sound を足しています（V2 形式の 6 曲の Core sound は V6 に既にあるものでした）。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。",
+  extra: "V6 の補足に、22 曲の補足（Glitch FX / Drops / Mix / Samples / Phase / Call & response など）と、V2 形式の書き換え 3 件を足しています。<b><code>---</code> だけの行で区切って 1 候補</b>。3000 文字を超えたときは Keep → 副ジャンル → Mix → Drops → Samples の順に段落が削られます。",
+  theme: "V4 の共通テーマ ＋ V6 の追加テーマ ＋ 28 曲のテーマ。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
+  never: "28 曲の入力に出てくる Never use をすべて候補にしています（区切りを統一し重複を除いたもの）。パターンを選ぶとその曲の行になります。",
+  avoid: "28 曲の入力に出てくる Avoid をすべて候補にしています。パターンを選ぶとその曲の行になります。",
+  trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Mix → Drops → Samples の順に落とします。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。",
+});
 
 const VERSIONS = [
   {
@@ -97,17 +112,18 @@ const VERSIONS = [
   {
     id: "v7", badge: "V7 / HYPER TECHNO #06 × #07", bpmTitle: "BPM・キー", swapFrom: "Future Bass", swapEnabled: true,
     extrasFirst: true, dropOrder: DROP_ORDER_V7, swapCaseSensitive: true,
-    hints: Object.assign({}, HINT_V12, {
-      pattern: "No.1〜No.11 は V6（V2 の 11 パターン）。No.12〜No.33 は HyperTechno #06 / #07 の 22 曲で、入力プロンプト（gpt_description_prompt）のメイン行が <code>Genre:</code> / <code>Main genre:</code> で始まる V6 に無い型なので、1 曲 1 ベースにしています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Never use / Avoid（古文の文面を持つ曲は古文も）が、その曲の入力どおりに差し替わります。",
-      genre: "メイン 1 行目の <code>Future Bass</code>（大文字小文字を区別）を、下の候補からランダムに選んだ 1 語で置き換えます。V2 形式の入力で使われていた <code>North East Makina x Anime opening</code> / <code>DJ-style x Addictive tracks x glitch</code> を候補に足しています。グリッチ系メイン行の小文字の <code>future bass EDM MiX</code> は置き換えません。",
-      bpm: "1 行 1 候補。V6 の候補に、22 曲の BPM・キー（<code>BPM 158, D major.</code> など）を足しています。",
-      main: "1 行 1 候補。V6 のメインに、22 曲のメインと、V2 形式 5 曲（Cute Face, Sharp Game / One Little Night / 朝よ、あの席にも / ふたつの影 / 好きって言ってよ）のメインの書き換えを足しています。",
-      core: "1 行 1 候補（長文 1 行）。V6 の Core sound に 22 曲の Core sound を足しています（V2 形式の 6 曲の Core sound は V6 に既にあるものでした）。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。",
-      extra: "V6 の補足に、22 曲の補足（Glitch FX / Drops / Mix / Samples / Phase / Call & response など）と、V2 形式の書き換え 3 件を足しています。<b><code>---</code> だけの行で区切って 1 候補</b>。3000 文字を超えたときは Keep → 副ジャンル → Mix → Drops → Samples の順に段落が削られます。",
-      theme: "V4 の共通テーマ ＋ V6 の追加テーマ ＋ 28 曲のテーマ。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
-      never: "28 曲の入力に出てくる Never use をすべて候補にしています（区切りを統一し重複を除いたもの）。パターンを選ぶとその曲の行になります。",
-      avoid: "28 曲の入力に出てくる Avoid をすべて候補にしています。パターンを選ぶとその曲の行になります。",
-      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Mix → Drops → Samples の順に落とします。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。",
+    hints: HINT_V7,
+  },
+  {
+    id: "v8", badge: "V8 / V7 × V5 CORE FUSION", bpmTitle: "BPM・キー", swapFrom: "Future Bass", swapEnabled: true,
+    extrasFirst: true, dropOrder: DROP_ORDER_V8, swapCaseSensitive: true,
+    hints: Object.assign({}, HINT_V7, {
+      pattern: "No.1〜No.33 は V7 の全ベースで、Core sound だけ元の Core の後ろに <code>plus …</code> で V5 の Core sound の音色（ベース / リード / 質感から、元に無いもの）を足しています。No.34〜No.201 は V5 の 12 ベースのメイン行の先頭 <code>Genre: Glitchcore hip-hop.</code> を <code>makina x Anime Opening x Addictive tracks x ○○ EDM MiX</code> の 14 通りに置き換えたもので、ほかの欄と Never use / Avoid は V5 のままです（最後のサビ直前の転調も残ります）。",
+      core: "1 行 1 候補（長文 1 行）。V7 の 33 ベースに V5 の音色を融合した Core と、V5 の 12 ベースの Core です。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。",
+      theme: "V4 の共通テーマ ＋ V6 の追加テーマ ＋ V7 の 28 曲のテーマ ＋ V5 の 12 ベースのテーマ。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
+      never: "V7 の候補に V5 の Never use を足しています。パターンを選ぶとそのベースの行になります。",
+      avoid: "V7 の候補に V5 の Avoid を足しています。パターンを選ぶとそのベースの行になります。",
+      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に落とし、Modulation（転調）は最後まで残ります。Structure の転調の行も残します。",
     }),
   },
 ];

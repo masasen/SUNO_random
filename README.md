@@ -18,9 +18,9 @@ SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリで�
 | V3 | Glass Cherry Maze を土台に TRANCE × EDM BANGER Vol.31 の 10 曲 | V3 専用の 1 行 | あり |
 | V4 | StreetDanceEDM #07 / #08 の 14 曲 | 共通の 1 行 | あり |
 | V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
-| V6 | 刺さった自作曲 Byte by Byte を、作ったときの入力形式（短いキーワードの列挙）＋実測で完全模倣 | なし | あり |
+| V6 | V2 の 11 パターン（歌詞テーマ・補足・Structure・ボーカル・比率は V2 の 2 倍） | Never use は V4 と共通、Avoid は V2 と同じ 1 行 | なし |
 
-歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4 で共通です。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
+歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4・V6 で共通です（V6 はさらに追加テーマを持ちます）。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
 ## V5 の書き方
 
@@ -34,9 +34,10 @@ SUNO Simple Prompt Builder V1〜V6 の GitHub Pages 公開用リポジトリで�
 
 ## V6 の書き方
 
-- 刺さった自作曲 `work4/mp3/EDM/#64/#62-Byte_by_Byte.mp3`（SUNO v5.5 で生成）の完全模倣です。
-- MP3 と同名 .txt のメタデータから、この曲はシンプルモードの説明欄に短いキーワードを 13 個並べただけで作られていたと分かったので、長い説明文をやめ、同じ「短いキーワードを 1 行ずつ、末尾カンマで並べる」形式に戻しました。元の 13 キーワードを元の順番のまま残し、音源の実測（librosa / demucs / Whisper）で分かった音と展開を同じ書き方で足しています（500 文字以内）。
-- 元の入力に無い Never use / Avoid は書きません。実測値とメタデータは画面の音源解析メモに出ます。
+- V2 の 11 パターン（BPM / メイン / Core sound / 補足 / Structure / ボーカル）をそのまま土台にし、ジャンル置換・自動トリム・Avoid も V2 と同じです。
+- 歌詞テーマ・サウンド補足・Structure・ボーカル指定・Lyrics 比率は V2 の 2 倍です（テーマ 46 → 92、補足・Structure・ボーカル 11 → 22、比率 9 → 18）。追加分はパターンに紐づけず `prompt-data-v6.js` の `THEME_MORE` / `EXTRA_MORE` / `STRUCTURE_MORE` / `VOCAL_MORE` / `LYRICS_RATIOS` に持ち、ランダム生成で V2 の候補と混ざって抽選されます。
+- 古文フラグメントは V4 と同じ文面で常に入ります。
+- BPM は V2 の候補に、125 付近（`BPM 122-128.` など 5 行）と half-time（`BPM 62-64 half-time, double-time 124-128 energy.` 〜 `BPM 90-94 half-time, double-time 180-188 energy.` の 7 行）を足しています。
 
 ## 候補データの更新
 

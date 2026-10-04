@@ -1,11 +1,11 @@
 # SUNO_random
 
-SUNO Simple Prompt Builder V1〜V7 の GitHub Pages 公開用リポジトリです。画面上部の `V1` / `V2` / `V3` / `V4` / `V5` / `V6` / `V7` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V7 です。
+SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリです。画面上部の `V1` 〜 `V8` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V8 です。
 
 ## ファイルの役割
 
 - `index.html`: 画面の外枠とスタイル。候補データの更新時は編集不要です。
-- `prompt-data-v1.js` 〜 `prompt-data-v7.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
+- `prompt-data-v1.js` 〜 `prompt-data-v8.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
 - `app.js`: 版の切り替え、ランダム抽選、組み立て、保存などの処理。版ごとの説明文・ジャンル置換の既定値・自動トリムで削る順もここにあります。
 - `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。`tests/fixtures/hypertechno-prompts.json` は V7 の元にした 28 曲の入力プロンプトです。
 
@@ -20,6 +20,7 @@ SUNO Simple Prompt Builder V1〜V7 の GitHub Pages 公開用リポジトリで�
 | V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
 | V6 | V2 の 11 パターン（歌詞テーマ・補足・Structure・ボーカル・比率は V2 の 2 倍） | Never use は V4 と共通、Avoid は V2 と同じ 1 行 | なし |
 | V7 | V6 の 11 パターン ＋ HyperTechno #06 / #07 の 22 曲（ほか 6 曲は候補欄へ） | 28 曲の入力に出てくる行をすべて候補に持つ | なし |
+| V8 | V7 の 33 ベース（Core に V5 の音色を融合）＋ V5 の 12 ベース × メイン 1 行目 14 通り | V7 の候補 ＋ V5 の 1 行（V5 由来のベースは V5 の行） | なし |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4・V6 で共通です（V6 はさらに追加テーマを持ちます）。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -50,6 +51,13 @@ SUNO Simple Prompt Builder V1〜V7 の GitHub Pages 公開用リポジトリで�
 - 古文フラグメントは常に入ります。V7 は `---` 区切りで 4 つの文面を持ち、ランダム生成のたびに 1 つ選びます（パターンが文面を持つときはそれを使います）。
 - ジャンル置換は大文字小文字を区別します（グリッチ系メイン行の小文字の `future bass EDM MiX` は置き換えません）。
 - 入力の表記ゆれは直しています: 全角スペース → 半角、`Amine` → `Anime`、`suger` → `sugar`、Never use の区切りを `, ` にそろえて重複を除去。
+
+## V8 の書き方
+
+- **No.1〜No.33**: V7 の全ベースそのままで、Core sound だけ元の Core の後ろに `plus …` で V5 の Core sound の音色を足しています。V5 の Core をベース（808 / reese など）・リード（music-box / harpsichord / cowbell など）・質感（glass / static / error-beep など）に分け、元の Core に同じ音色（語）が無いものを 1 つずつ選びます。元の Core に 808 / reese / distorted bass がある曲はベースを足さず、質感を 2 つにします。Core sound の無かった No.5 / No.10 は V5 の音色だけで Core を作っています。
+- **No.34〜No.201**: V5 の 12 ベースのメイン行の先頭 `Genre: Glitchcore hip-hop.` を `Genre: makina x Anime Opening x Addictive tracks x ○○ EDM MiX.` に置き換えた 14 通り（Glitchcore hip-hop / jersey club / hyperpop / breakcore / digicore / nightcore / drift phonk / drum & bass / trap / rage / jungle / happy hardcore / future bass / hyper techno）。ほかの欄と Never use / Avoid は V5 のままで、最後のサビ直前の転調（BPM 行・Final chorus 行・Modulation）も残ります。
+- 古文フラグメントは V7 と同じく常に 1 つ入ります（V5 由来のベースにも入ります）。
+- ベースボタンが 201 個あるので、ベースパターンの欄は高さ 320px でスクロールします。
 
 ## 候補データの更新
 

@@ -17,6 +17,7 @@ const HINT_SLOT_AVOID = "ベースに関わらず出力の最後に必ず付き�
 const HINT_THEME = "V4 の 14 曲の歌詞メタデータから起こしたテーマ 14 ＋ 追加テーマ（共通モチーフ・ボス戦・旧 V1〜V3 のテーマ）。全版共通です。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。";
 const HINT_TRIM_SETS = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は念押し系（Keep …）→ 副次説明（Future Bass is secondary …）→ サンプリング指示の順に落とすので、Phase / Stage の記述は最後まで残ります。メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
 const HINT_TRIM_DJ = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
+const HINT_PERSPECTIVE = "1 行 1 候補。歌詞を誰の口で語るか（一人称の独白 / あなたへの語りかけ / 過去の自分との対話 / 私たち など）をテーマとは別に抽選し、テーマの直後に <code>POV:</code> の 1 行で入れます。自動トリムでは削られません。V5 / V8 で同じ候補です。";
 const HINT_V12 = {
   pattern: "prompt.md の 10 パターン。選ぶと BPM / メイン / Core sound / 補足 / Structure / ボーカル の各候補欄が、そのパターンの内容で先頭に差し込まれます（既存の候補は残ります）。",
   bpm: "1 行 1 候補。生成時にランダムで 1 行選ばれます。",
@@ -98,6 +99,7 @@ const VERSIONS = [
       theme: "V5 専用のテーマ 58 件（12 ベース分 ＋ 追加 46）。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
       trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に落とすので、Modulation・Glitch FX・Main concept・Stage / Phase・Constantly alternate は最後まで残ります。Structure の中間行を削るときも、転調を指示する行（Final chorus 行）は残します。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・Never use・Avoid は削られません。",
       analysis: "",
+      perspective: HINT_PERSPECTIVE,
     }),
   },
   {
@@ -124,6 +126,7 @@ const VERSIONS = [
       never: "V7 の候補に V5 の Never use を足しています。パターンを選ぶとそのベースの行になります。",
       avoid: "V7 の候補に V5 の Avoid を足しています。パターンを選ぶとそのベースの行になります。",
       trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に落とし、Modulation（転調）は最後まで残ります。Structure の転調の行も残します。",
+      perspective: HINT_PERSPECTIVE,
     }),
   },
 ];
@@ -202,7 +205,7 @@ function esc(s) {
 // ── スロット定義 ──
 // kind: "line" = 1 行 1 候補 / "block" = 空行区切りで 1 候補
 
-const SLOT_KEYS = ["bpm", "main", "genre", "core", "extra", "structure", "vocal", "ratio", "theme", "never", "avoid"];
+const SLOT_KEYS = ["bpm", "main", "genre", "core", "extra", "structure", "vocal", "ratio", "theme", "perspective", "never", "avoid"];
 
 const slots = {};
 
@@ -227,6 +230,7 @@ function defaultSources() {
     vocal:     uniq(patternValues("vocal").concat(data.vocals || [])).join(BLOCK_SEP),
     ratio:     mergedValues("ratio", data.lyricsRatios).join("\n"),
     theme:     data.themes.join(BLOCK_SEP),
+    perspective: uniq(data.perspectives || []).join("\n"),
     never:     uniq(data.never).join("\n"),
     avoid:     uniq(data.avoid).join("\n"),
   };
@@ -305,6 +309,7 @@ function collectState() {
     vocalLines,
     ratio: slots.ratio.picked,
     themeBody,
+    perspective: slots.perspective.picked,
     classical,
     chorus,
     never: slots.never.picked,
@@ -347,6 +352,7 @@ function assemble(state) {
   push(state.vocalLines.join("\n"));
   push(state.ratio);
   push(state.themeBody);
+  push(state.perspective);
   push(state.classical);
   push(state.chorus);
   if (state.never) push("Never use:\n" + state.never);
@@ -719,8 +725,8 @@ function bindEvents() {
   $("#btnRandomGen").addEventListener("click", () => {
     rollAll(true);
     const text = generate();
-    const pinned = SLOT_KEYS.filter((k) => slots[k].pinned).length;
-    setMsg(text ? "固定していない " + (SLOT_KEYS.length - pinned) + " 項目をランダム選択して生成しました。" : "候補が空です。", text ? "ok" : "error");
+    const unpinned = SLOT_KEYS.filter((k) => !slots[k].card.hidden && !slots[k].pinned).length;
+    setMsg(text ? "固定していない " + unpinned + " 項目をランダム選択して生成しました。" : "候補が空です。", text ? "ok" : "error");
   });
 
   const doCopy = async () => {
@@ -861,6 +867,7 @@ function applyVersionView() {
   });
   $('[data-title="bpm"]').textContent = version.bpmTitle;
   $("#classicalCard").hidden = !data.classical;
+  $('[data-slot="perspective"]').hidden = !data.perspectives;
   // 非表示のカードを飛ばして左列の番号を振り直す
   let n = 0;
   $$(".col-left .card").forEach((card) => {
@@ -882,7 +889,9 @@ function switchVersion(id) {
   classicalPicked = "";
   $("#outputText").value = "";
   $("#trimNote").textContent = "";
-  if (!loadState()) loadDefaults();
+  // 保存内容に無いスロット（後から足した視点など）が前の版の候補のまま残らないよう、初期値を敷いてから重ねる
+  loadDefaults();
+  loadState();
   renderHistory();
   renderPresets();
   updateMeter();

@@ -781,3 +781,60 @@ test("V8 は全ベースで 3000 文字以内に収まり、古文は常に入�
   }
   await page.close();
 });
+
+test("視点・語り手は V5 / V8 だけが候補を持ち、ランダム生成のたびにテーマの直後へ POV 行が入る", async () => {
+  const { page, errors } = await openPage();
+  for (const id of ["v5", "v8"]) {
+    await useVersion(page, id);
+    assert.equal(await page.isVisible('[data-slot="perspective"]'), true, id + " の視点カード");
+    const list = await candidates(page, "perspective");
+    assert.ok(list.length >= 10, id + " の視点候補数: " + list.length);
+    for (const c of list) assert.match(c, /^POV: /, id + " の候補は POV: で始まる: " + c);
+    const seen = new Set();
+    for (let i = 0; i < 20; i++) {
+      const out = await randomOutput(page);
+      const pov = out.match(/^POV: .+$/gm) || [];
+      assert.equal(pov.length, 1, id + " の POV 行は 1 つ");
+      assert.ok(list.includes(pov[0]), id + " の POV 行は候補から選ばれる");
+      seen.add(pov[0]);
+      const theme = out.indexOf("Theme:");
+      const at = out.indexOf(pov[0]);
+      assert.ok(theme >= 0 && theme < at, id + " の POV はテーマの後ろ");
+      assert.ok(at < out.indexOf("Never use:"), id + " の POV は Never use の前");
+      if (id === "v8") assert.ok(at < out.indexOf(CLASSICAL), "V8 の POV は古文の前");
+    }
+    assert.ok(seen.size > 1, id + " の視点がランダムに変わる");
+  }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("V5 / V8 の視点候補は同じ", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  const v5 = await candidates(page, "perspective");
+  await useVersion(page, "v8");
+  assert.deepEqual(await candidates(page, "perspective"), v5);
+  await page.close();
+});
+
+test("視点・語り手は V1〜V4 / V6 / V7 では隠れて出力にも入らない（V8 から切り替えても残らない）", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v8");
+  await randomOutput(page);
+  for (const id of ["v1", "v2", "v3", "v4", "v6", "v7"]) {
+    await useVersion(page, id);
+    assert.equal(await page.isVisible('[data-slot="perspective"]'), false, id + " の視点カードは隠れる");
+    for (let i = 0; i < 3; i++) assert.doesNotMatch(await randomOutput(page), /^POV: /m, id + " に POV 行は入らない");
+  }
+  await page.close();
+});
+
+test("V5 / V8 で視点を固定するとランダム生成でも変わらない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v5");
+  const first = (await randomOutput(page)).match(/^POV: .+$/m)[0];
+  await page.click('[data-slot="perspective"] [data-pin]');
+  for (let i = 0; i < 5; i++) assert.equal((await randomOutput(page)).match(/^POV: .+$/m)[0], first);
+  await page.close();
+});

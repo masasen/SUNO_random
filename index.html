@@ -661,6 +661,19 @@ textarea::placeholder { color: var(--fg-faint); }
       <textarea data-src rows="14"></textarea>
     </section>
 
+    <section class="card" data-slot="perspective" data-kind="line">
+      <div class="card-head">
+        <h2><span class="num">10</span>視点・語り手</h2>
+        <div class="card-tools">
+          <button class="icon-btn" data-pin title="固定">🔓</button>
+          <button class="icon-btn" data-dice title="ランダム再抽選">🎲</button>
+        </div>
+      </div>
+      <p class="hint" data-hint="perspective"></p>
+      <div class="picked empty" data-picked>未選択</div>
+      <textarea data-src rows="6"></textarea>
+    </section>
+
     <section class="card" id="classicalCard">
       <div class="card-head"><h2><span class="num">10</span>古文フラグメント（常時固定）</h2></div>
       <p class="hint">テーマに関わらず必ず出力へ入ります（V1〜V4 共通で文面の初期値は prompt-data-v4.js。V5 では使いません）。テーマの <code>Chorus:</code> 行はこの指示の後ろへ回されます。文面だけ編集できます。V7 / V8 は <code>---</code> だけの行で区切った複数の文面を持ち、ランダム生成のたびに 1 つ選びます（パターンが文面を持つときはそれ）。</p>

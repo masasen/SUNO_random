@@ -3208,6 +3208,22 @@ const CLASSICAL = [
 "Occasionally generate original brief classical-Japanese-style fragments from the surrounding emotional context. Blend naturally into modern Japanese. Do not quote existing literature.",
 ];
 
+// 視点・語り手。テーマとは別に抽選し、同じテーマでも語り口で曲ごとの差を出す。V5 / V8 で同じ候補を持つ
+const PERSPECTIVES = [
+"POV: first person, an inner monologue in \"I\", as if no one is listening.",
+"POV: second person, the singer talks straight to \"you\", one person they cannot stop thinking about.",
+"POV: third person, the singer watches someone from a distance and tells their story.",
+"POV: \"we\", the singer speaks for a small crew sharing the same moment.",
+"POV: past self and present self in dialogue, the verses are the younger \"I\" and the chorus answers as \"I\" today.",
+"POV: a letter to the future self, read aloud line by line.",
+"POV: the one left behind, singing to someone who has already moved on.",
+"POV: a close object (a phone, a mirror, a music box) narrating what it sees of its owner.",
+"POV: the city at night speaking to the singer as if it were alive.",
+"POV: the narrator switches between \"I\" and \"you\" every section until the two blur together.",
+"POV: a reply, every verse answers words the other person once said.",
+"POV: calling out to the crowd on the dance floor, the chorus lets them answer back.",
+];
+
 return {
   patterns: PATTERNS,
   mains: MAINS,
@@ -3222,5 +3238,6 @@ return {
   never: NEVER_USE,
   avoid: AVOID,
   classical: CLASSICAL.join("\n---\n"),
+  perspectives: PERSPECTIVES,
 };
 })();

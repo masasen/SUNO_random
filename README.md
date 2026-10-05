@@ -33,6 +33,7 @@ SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリで�
 - Structure とサウンド補足は、V1〜V4 に出てくる区画と段落の種類をすべて持ちます。
 - 転調は効きやすい書き方に絞り、最後のサビの直前で 1 回だけ上げます（up a step）。BPM 行に `key change up a step into the final chorus`、Structure は `Final chorus:` 行の中に転調と耳で分かる変化（energy rises / bigger voice）、補足の先頭の `Modulation:` 段落で歌詞の区画タグの中に書かせます（`[Final Chorus: key change up a step, energy rises, bigger voice]`）。独立した `[Key Change]` タグや relative major / half step などの理論用語は使いません。3000 文字を超えてもこの 3 か所は削られません。確実に転調させたいときは、最後のサビ直前の無音・ドロップで切って Suno Studio の Pitch で後半を上げてください。
 - 古文フラグメントは使いません。
+- 視点・語り手（`PERSPECTIVES` の 12 候補: 一人称の独白 / あなたへの語りかけ / 過去の自分と今の自分の対話 / 私たち など）をテーマとは別に抽選し、テーマの直後に `POV:` の 1 行で入れます。自動トリムでは削られません。
 
 ## V6 の書き方
 
@@ -58,6 +59,7 @@ SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリで�
 - **No.34〜No.201**: V5 の 12 ベースのメイン行の先頭 `Genre: Glitchcore hip-hop.` を `Genre: makina x Anime Opening x Addictive tracks x ○○ EDM MiX.` に置き換えた 14 通り（Glitchcore hip-hop / jersey club / hyperpop / breakcore / digicore / nightcore / drift phonk / drum & bass / trap / rage / jungle / happy hardcore / future bass / hyper techno）。ほかの欄と Never use / Avoid は V5 のままで、最後のサビ直前の転調（BPM 行・Final chorus 行・Modulation）も残ります。
 - 古文フラグメントは V7 と同じく常に 1 つ入ります（V5 由来のベースにも入ります）。
 - ベースボタンが 201 個あるので、ベースパターンの欄は高さ 320px でスクロールします。
+- 視点・語り手は V5 と同じ 12 候補を `prompt-data-v8.js` の `PERSPECTIVES` に持ち、テーマの直後に `POV:` の 1 行で入れます（古文フラグメントより前）。V1〜V4 / V6 / V7 には視点の候補が無く、カードは表示されません。
 
 ## 候補データの更新
 

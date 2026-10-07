@@ -20,7 +20,7 @@ SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリで�
 | V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
 | V6 | V2 の 11 パターン（歌詞テーマ・補足・Structure・ボーカル・比率は V2 の 2 倍） | Never use は V4 と共通、Avoid は V2 と同じ 1 行 | なし |
 | V7 | V6 の 11 パターン ＋ HyperTechno #06 / #07 の 22 曲（ほか 6 曲は候補欄へ） | 28 曲の入力に出てくる行をすべて候補に持つ | なし |
-| V8 | Early-90s Japanese Rave Techno × Juliana-era rave の 1 プロンプト（テーマは V1〜V7 から流用） | 使わない | なし |
+| V8 | Early-90s Japanese Rave Techno × Juliana-era rave の 1 プロンプト（テーマは V1〜V7 から流用） | Never use は専用の 1 行、Avoid は使わない | なし |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4・V6 で共通です（V6 はさらに追加テーマを持ちます）。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -55,12 +55,15 @@ SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリで�
 
 ## V8 の書き方
 
-- 指定の 1 プロンプト（`BPM 160–170.` / `Genre: Early-90s Japanese Rave Techno x Hardcore Rave x Hyper Techno x happy hardcore x makina EDM.` …）を各欄に分けたベース 1 つ（Juliana Rave Sampler）だけを持ち、ほかの候補は足していません。
+- 指定の 1 プロンプト（`BPM 160–170.` / `Genre: Early-90s Japanese Rave Techno x Hardcore Rave x Hyper Techno x happy hardcore x makina EDM.` …）を各欄に分けたベース 1 つ（Juliana Rave Sampler）だけを持ちます。
 - 欄の割り当て: BPM / メイン（Genre 行）/ Core sound / 補足（80% classic … 〜 Alternate）/ Structure（DROP / BREAK / FINAL DROP）/ ボーカル指定の欄に Mood・Priority / Lyrics 比率。出力は Structure → Mood・Priority → Lyrics → テーマの順です。
 - 言語は英語のみで、Lyrics は `Lyrics: only English 100%.` の 1 行です（元の code-switching の指定は外しています）。
 - 歌詞テーマは `app.js` が V1〜V7 のテーマを借り、日本語を指定するテーマ（`Japanese` を含むもの）を除いて使います。
 - ジャンル置換は既定 ON で、メイン行の `makina` を V1〜V7 の置換語（makina を含む語と、メイン行に既にある hyper techno / happy hardcore を除く 45 語）のどれかに置き換えます。
-- 古文フラグメント・視点・Never use・Avoid は使わず、カードも隠れます。
+- BPM は指定の `BPM 160–170.` に、BPM・キーの 21 候補（`BPM 166 (83 half-time feel), G minor.` など）を足しています。
+- 一瞬止まってまた続く流れは V5 の書き方を借りています: 補足の最後に `Drops: the build rises for 8 bars, one beat of total silence, then the drop slams in at full width.`、Structure の DROP の前に `Silence: one beat of dead air.`、FINAL DROP の前に `Silence: one bar, frozen frame.`。
+- Never use は V5 の 1 行に `拍` を足したもので、プロンプトの最後に付きます。
+- 古文フラグメント・視点・Avoid は使わず、カードも隠れます。
 
 ## 候補データの更新
 

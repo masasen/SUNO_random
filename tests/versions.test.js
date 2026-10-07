@@ -52,7 +52,7 @@ test("ヘッダーに V1〜V8 の切り替えボタンがあり、初回は V8",
   const labels = await page.$$eval("#versionSwitch [data-ver]", (els) => els.map((e) => e.textContent.trim()));
   assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8"]);
   assert.match(await page.textContent("#versionBadge"), /^V8/);
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 201);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 1);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -65,7 +65,7 @@ const CASES = [
   { id: "v5", chips: 12, classical: false, analysis: false },
   { id: "v6", chips: 11, classical: true, analysis: false },
   { id: "v7", chips: 33, classical: true, analysis: false },
-  { id: "v8", chips: 201, classical: true, analysis: false },
+  { id: "v8", chips: 1, classical: false, analysis: false, lists: false },
 ];
 
 for (const c of CASES) {
@@ -691,100 +691,113 @@ test("V7 のパターンを選んだあとの生成ボタンは、同じ古文�
   await page.close();
 });
 
-// ── V8: V7 の全ベースの Core sound に V5 の音色を融合し、V5 の 12 ベース × 1 行目の置き換え 14 通りをベースに足した版 ──
+// ── V8: Early-90s Japanese Rave Techno の 1 プロンプトだけで組み立てる版（歌詞テーマは V1〜V7 から流用・英語のみ・makina を置換） ──
 
-const V8_GENRES = [
-  "Glitchcore hip-hop", "jersey club", "hyperpop", "breakcore", "digicore", "nightcore", "drift phonk",
-  "drum & bass", "trap", "rage", "jungle", "happy hardcore", "future bass", "hyper techno",
-].map((g) => "makina x Anime Opening x Addictive tracks x " + g + " EDM MiX");
+const V8_BPM = "BPM 160–170.";
+const V8_MAIN = "Genre: Early-90s Japanese Rave Techno x Hardcore Rave x Hyper Techno x happy hardcore x makina EDM.";
+const V8_CORE = "Core sound: relentless hard 4x4 kick, bright hats, snare rushes, fast octave rave bass, huge orchestra hits, minor-key rave stabs, short hoover tones and rave-piano attacks.";
+const V8_EXTRA = [
+  "80% classic Juliana-era rave, 20% modern Hyper Techno x happy hardcore x makina EDM sound.",
+  "DJ sampling is the main engine.",
+  "Use recurring female shout cuts, MC fragments, scratches, backspins, rewinds, rave sirens, orchestra hits, crowd hits, break loops and digital stutters.",
+  "Reuse samples through pitch, reverse, scratch, retrigger and rhythmic chopping.",
+  "Main hook:\norchestra hit → female shout → silence → kick slam → rave stab.",
+  "Keep melodies short, aggressive and repetitive.",
+  "Modern 30%:\nheavier kick transients, tighter sub, distorted electro-bass punches, short 808 drops, breakbeat cuts and occasional Jersey-style kick interruptions.",
+  "Add choreography accents:\nbeat stop, bass hit, vocal chop, scratch freeze, half-bar silence, hard restart.",
+  "Alternate:\n4x4 rave → short breakbeat → DJ stop → bass punch → 4x4 return.",
+].join("\n\n");
+const V8_STRUCTURE = [
+  "DROP:\nclassic rave kick and octave bass remain dominant, with orchestra hits, shout cuts, scratches and modern bass punches.",
+  "BREAK:\n4–8 bars only.\nRave piano, chopped vocals and brief half-time street groove.",
+  "FINAL DROP:\nmaximum sample density, hard 4x4 kick, rave bass, orchestra hits, hoover cuts, scratches, English MC chops, breakbeat fills and modern low-end impact.",
+].join("\n\n");
+const V8_MOOD = "Mood: flashy, aggressive, ecstatic, decadent, street-ready.\n\nPriority:\nDJ sampling > Juliana rave groove > orchestra hits > street-dance rhythm > rave bass.";
+const V8_RATIO = "Lyrics: only English 100%.";
+const V8_HEAD = [V8_BPM, V8_MAIN, V8_CORE, V8_EXTRA, V8_STRUCTURE, V8_MOOD, V8_RATIO].join("\n\n");
 
-async function patternsOf(page, id) {
-  return page.evaluate((v) => window.PROMPT_DATA[v].patterns, id);
+async function v8ThemePool(page) {
+  const pool = [];
+  for (const id of ["v1", "v2", "v3", "v4", "v5", "v6", "v7"]) {
+    await useVersion(page, id);
+    pool.push(...(await candidates(page, "theme")));
+  }
+  return [...new Set(pool)].filter((t) => !/japanese/i.test(t));
 }
 
-function v5CoreElements(v5) {
-  return [...new Set(v5.flatMap((p) => p.core.replace(/^Core sound:\s*/, "").replace(/\.$/, "").split(/,\s*/)))];
-}
-
-test("V8 の No.1〜No.33 は V7 のベースと同じで、Core sound だけが V7 の Core ＋ V5 の音色 2 つ以上になる", async () => {
-  const { page } = await openPage();
-  const v7 = await patternsOf(page, "v7");
-  const v5 = await patternsOf(page, "v5");
-  const v8 = await patternsOf(page, "v8");
-  const elements = v5CoreElements(v5);
-  assert.equal(v7.length, 33);
-  for (let i = 0; i < 33; i++) {
-    const a = v7[i], b = v8[i];
-    assert.equal(b.name, a.name);
-    for (const k of ["bpm", "main", "extra", "structure", "vocal", "ratio", "theme", "never", "avoid", "classical"]) assert.equal(b[k], a[k], a.name + " の " + k);
-    assert.match(b.core, /^Core sound: /, a.name);
-    assert.notEqual(b.core, a.core, a.name + " の Core は融合で変わる");
-    if (a.core) assert.ok(b.core.startsWith(a.core.replace(/\.$/, "")), a.name + " は元の Core を残す");
-    const added = elements.filter((e) => b.core.includes(e) && !(a.core || "").includes(e));
-    assert.ok(added.length >= 2, a.name + " に V5 の音色が 2 つ以上: " + added.join(" / "));
-  }
-  await page.close();
-});
-
-test("V8 の No.34〜No.201 は V5 の 12 ベース × 1 行目の置き換え 14 通りで、ほかは V5 のまま", async () => {
-  const { page } = await openPage();
-  const v5 = await patternsOf(page, "v5");
-  const v5Data = await page.evaluate(() => ({ never: window.PROMPT_DATA.v5.never, avoid: window.PROMPT_DATA.v5.avoid }));
-  const v8 = await patternsOf(page, "v8");
-  assert.equal(v8.length, 33 + 12 * 14);
-  let i = 33;
-  for (const base of v5) {
-    for (const g of V8_GENRES) {
-      const p = v8[i++];
-      assert.equal(p.main, base.main.replace(/^Genre: Glitchcore hip-hop\./, "Genre: " + g + "."), p.name);
-      assert.ok(p.name.includes(base.name) && p.name.includes(g.replace(/^makina x Anime Opening x Addictive tracks x | EDM MiX$/g, "")), p.name);
-      for (const k of ["bpm", "core", "extra", "structure", "vocal", "ratio", "theme"]) assert.equal(p[k], base[k], p.name + " の " + k);
-      assert.equal(p.never, v5Data.never[0], p.name + " の never");
-      assert.equal(p.avoid, v5Data.avoid[0], p.name + " の avoid");
-    }
-  }
-  await page.close();
-});
-
-test("V8 は Core 以外の候補欄で V7 の候補を全部持ち、Core 欄は融合した Core と V5 の Core を持つ", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v7");
-  const v7 = {};
-  for (const k of SLOT_KEYS_ALL) v7[k] = await candidates(page, k);
-  await useVersion(page, "v8");
-  for (const k of SLOT_KEYS_ALL.filter((x) => x !== "core")) {
-    const v8 = await candidates(page, k);
-    for (const c of v7[k]) assert.ok(v8.includes(c), k + " に V7 の候補が残る: " + c.slice(0, 50));
-  }
-  const core = await candidates(page, "core");
-  const v8p = await patternsOf(page, "v8");
-  for (const p of v8p) assert.ok(core.includes(p.core), "Core 欄にある: " + p.name);
-  await page.close();
-});
-
-test("V8 は全ベースで 3000 文字以内に収まり、古文は常に入り、V5 由来のベースは転調の指示を残す", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v8");
-  const ids = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
-  for (const id of ids) {
-    await page.click('#patternChips .chip[data-id="' + id + '"]');
-    await page.click("#btnGenerate");
-    const out = await page.inputValue("#outputText");
-    assert.ok(out.length <= 3000, "No." + id + " の長さ " + out.length);
-    assert.ok(out.includes(CLASSICAL), "No." + id + " の古文");
-    if (Number(id) > 33) {
-      assert.match(out, /^BPM .*key change up a step/m, "No." + id + " の BPM 行");
-      assert.match(out, /^Final chorus:.*key change/im, "No." + id + " の Final chorus 行");
-      assert.match(out, /^Modulation:/m, "No." + id + " の Modulation");
-      assert.match(out, /^Genre: makina x Anime Opening x Addictive tracks x /m, "No." + id + " のメイン");
-    }
-  }
-  await page.close();
-});
-
-test("視点・語り手は V5 / V8 だけが候補を持ち、ランダム生成のたびにテーマの直後へ POV 行が入る", async () => {
+test("V8 はベース 1 つで、指定のプロンプトだけを候補に持つ（古文・視点・Never use・Avoid は無し）", async () => {
   const { page, errors } = await openPage();
-  for (const id of ["v5", "v8"]) {
+  await useVersion(page, "v8");
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 1);
+  assert.deepEqual(await candidates(page, "bpm"), [V8_BPM]);
+  assert.deepEqual(await candidates(page, "main"), [V8_MAIN]);
+  assert.deepEqual(await candidates(page, "core"), [V8_CORE]);
+  assert.deepEqual(await candidates(page, "extra"), [V8_EXTRA]);
+  assert.deepEqual(await candidates(page, "structure"), [V8_STRUCTURE]);
+  assert.deepEqual(await candidates(page, "vocal"), [V8_MOOD]);
+  assert.deepEqual(await candidates(page, "ratio"), [V8_RATIO]);
+  assert.deepEqual(await candidates(page, "never"), []);
+  assert.deepEqual(await candidates(page, "avoid"), []);
+  assert.equal(await page.isVisible("#classicalCard"), false);
+  assert.equal(await page.isVisible('[data-slot="perspective"]'), false);
+  assert.equal(await page.isVisible('[data-slot="never"]'), false);
+  assert.equal(await page.isVisible('[data-slot="avoid"]'), false);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("V8 の歌詞テーマは V1〜V7 のテーマから日本語を指定するものを除いたもの", async () => {
+  const { page } = await openPage();
+  const pool = await v8ThemePool(page);
+  await useVersion(page, "v8");
+  const themes = await candidates(page, "theme");
+  assert.ok(themes.length >= 100, "テーマ数: " + themes.length);
+  assert.deepEqual([...themes].sort(), [...pool].sort());
+  for (const t of themes) assert.doesNotMatch(t, /japanese|[぀-ヿ一-鿿]/i);
+  await page.close();
+});
+
+test("V8 のジャンル置換は既定 ON で makina を置き換え、候補は V1〜V7 の置換語（makina とメインにある語を除く）", async () => {
+  const { page } = await openPage();
+  const expected = await page.evaluate((main) => {
+    const all = ["v1", "v2", "v3", "v4", "v5", "v6", "v7"].flatMap((v) => window.PROMPT_DATA[v].genreSwaps);
+    return [...new Set(all)].filter((g) => !/makina/i.test(g) && !main.toLowerCase().includes(g.toLowerCase()));
+  }, V8_MAIN);
+  await useVersion(page, "v8");
+  assert.equal(await page.inputValue("#swapFrom"), "makina");
+  assert.equal(await page.isChecked("#swapEnabled"), true);
+  const swaps = (await candidates(page, "genre")).filter((g) => g !== "(置換しない)");
+  assert.deepEqual([...swaps].sort(), [...expected].sort());
+  for (let i = 0; i < 10; i++) {
+    const out = await randomOutput(page);
+    const main = out.split("\n\n")[1];
+    const swapped = swaps.find((g) => main === V8_MAIN.replace("makina", g));
+    assert.ok(swapped || main === V8_MAIN, "メイン行の makina だけが置換される: " + main);
+  }
+  await page.close();
+});
+
+test("V8 は置換を切ると指定のプロンプトそのまま ＋ 英語のみの Lyrics ＋ V1〜V7 のテーマになる", async () => {
+  const { page, errors } = await openPage();
+  const pool = await v8ThemePool(page);
+  await useVersion(page, "v8");
+  await page.uncheck("#swapEnabled");
+  await page.click('#patternChips .chip[data-id="1"]');
+  for (let i = 0; i < 15; i++) {
+    const out = await randomOutput(page);
+    assert.ok(out.length <= 3000, "長さ " + out.length);
+    assert.ok(out.startsWith(V8_HEAD + "\n\n"), "指定のプロンプトの順で組み立てる");
+    const theme = out.slice(V8_HEAD.length + 2);
+    assert.ok(pool.includes(theme), "テーマは V1〜V7 から: " + theme.slice(0, 60));
+    assert.doesNotMatch(out, /Never use:|Avoid:|POV:|classical-Japanese|code-switching/);
+  }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("視点・語り手は V5 だけが候補を持ち、ランダム生成のたびにテーマの直後へ POV 行が入る", async () => {
+  const { page, errors } = await openPage();
+  for (const id of ["v5"]) {
     await useVersion(page, id);
     assert.equal(await page.isVisible('[data-slot="perspective"]'), true, id + " の視点カード");
     const list = await candidates(page, "perspective");
@@ -801,7 +814,6 @@ test("視点・語り手は V5 / V8 だけが候補を持ち、ランダム生�
       const at = out.indexOf(pov[0]);
       assert.ok(theme >= 0 && theme < at, id + " の POV はテーマの後ろ");
       assert.ok(at < out.indexOf("Never use:"), id + " の POV は Never use の前");
-      if (id === "v8") assert.ok(at < out.indexOf(CLASSICAL), "V8 の POV は古文の前");
     }
     assert.ok(seen.size > 1, id + " の視点がランダムに変わる");
   }
@@ -809,20 +821,11 @@ test("視点・語り手は V5 / V8 だけが候補を持ち、ランダム生�
   await page.close();
 });
 
-test("V5 / V8 の視点候補は同じ", async () => {
+test("視点・語り手は V1〜V4 / V6〜V8 では隠れて出力にも入らない（V5 から切り替えても残らない）", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
-  const v5 = await candidates(page, "perspective");
-  await useVersion(page, "v8");
-  assert.deepEqual(await candidates(page, "perspective"), v5);
-  await page.close();
-});
-
-test("視点・語り手は V1〜V4 / V6 / V7 では隠れて出力にも入らない（V8 から切り替えても残らない）", async () => {
-  const { page } = await openPage();
-  await useVersion(page, "v8");
   await randomOutput(page);
-  for (const id of ["v1", "v2", "v3", "v4", "v6", "v7"]) {
+  for (const id of ["v1", "v2", "v3", "v4", "v6", "v7", "v8"]) {
     await useVersion(page, id);
     assert.equal(await page.isVisible('[data-slot="perspective"]'), false, id + " の視点カードは隠れる");
     for (let i = 0; i < 3; i++) assert.doesNotMatch(await randomOutput(page), /^POV: /m, id + " に POV 行は入らない");
@@ -830,7 +833,7 @@ test("視点・語り手は V1〜V4 / V6 / V7 では隠れて出力にも入ら�
   await page.close();
 });
 
-test("V5 / V8 で視点を固定するとランダム生成でも変わらない", async () => {
+test("V5 で視点を固定するとランダム生成でも変わらない", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   const first = (await randomOutput(page)).match(/^POV: .+$/m)[0];

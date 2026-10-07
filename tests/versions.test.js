@@ -65,7 +65,7 @@ const CASES = [
   { id: "v5", chips: 12, classical: false, analysis: false },
   { id: "v6", chips: 11, classical: true, analysis: false },
   { id: "v7", chips: 33, classical: true, analysis: false },
-  { id: "v8", chips: 1, classical: false, analysis: false, lists: false },
+  { id: "v8", chips: 1, classical: false, analysis: false, avoid: false },
 ];
 
 for (const c of CASES) {
@@ -84,7 +84,8 @@ for (const c of CASES) {
         assert.doesNotMatch(out, /Never use:|Avoid:/, c.id + " は Never use / Avoid を書かない");
       } else {
         assert.match(out, /Never use:\n/);
-        assert.match(out, /Avoid:/);
+        if (c.avoid === false) assert.doesNotMatch(out, /Avoid:/, c.id + " は Avoid を書かない");
+        else assert.match(out, /Avoid:/);
       }
       if (c.classical) {
         const themeToClassical = out.slice(out.indexOf("Theme:"), out.indexOf(CLASSICAL));
@@ -694,6 +695,31 @@ test("V7 のパターンを選んだあとの生成ボタンは、同じ古文�
 // ── V8: Early-90s Japanese Rave Techno の 1 プロンプトだけで組み立てる版（歌詞テーマは V1〜V7 から流用・英語のみ・makina を置換） ──
 
 const V8_BPM = "BPM 160–170.";
+const V8_BPMS = [
+  V8_BPM,
+  "BPM 166 (83 half-time feel), G minor.",
+  "BPM 132, C# major.",
+  "BPM 164 (82 half-time feel), F minor.",
+  "BPM 159 (80 half-time feel), B major.",
+  "BPM 136, B major.",
+  "BPM 130, F minor.",
+  "BPM 164 (82 half-time feel), F# minor.",
+  "BPM 188 (94 half-time feel), G minor.",
+  "BPM 113, B♭ minor.",
+  "BPM 107, F minor.",
+  "BPM 143, E♭ minor.",
+  "BPM 131, F minor.",
+  "BPM 120, B♭ minor.",
+  "BPM 192 (96 half-time feel), B minor.",
+  "BPM 161 (80 half-time feel), G minor.",
+  "BPM 160 (80 half-time feel), F minor.",
+  "BPM 158 (79 half-time feel), C# minor.",
+  "BPM 130, C# minor.",
+  "BPM 134, B major.",
+  "BPM 136, D minor.",
+  "BPM 120, D minor.",
+];
+const V8_NEVER = "ネオン, 午前二時, 既読, コンビニ, 愛してる, 通知, 深夜, べつに, ねえ, 噛んで, キャンディ, リボン, 離れないで, 行かないで, あなたがほしい, 離さない, stay with me, 消えないで, 砂糖, pixel, sugar-face, 拍.";
 const V8_MAIN = "Genre: Early-90s Japanese Rave Techno x Hardcore Rave x Hyper Techno x happy hardcore x makina EDM.";
 const V8_CORE = "Core sound: relentless hard 4x4 kick, bright hats, snare rushes, fast octave rave bass, huge orchestra hits, minor-key rave stabs, short hoover tones and rave-piano attacks.";
 const V8_EXTRA = [
@@ -706,15 +732,18 @@ const V8_EXTRA = [
   "Modern 30%:\nheavier kick transients, tighter sub, distorted electro-bass punches, short 808 drops, breakbeat cuts and occasional Jersey-style kick interruptions.",
   "Add choreography accents:\nbeat stop, bass hit, vocal chop, scratch freeze, half-bar silence, hard restart.",
   "Alternate:\n4x4 rave → short breakbeat → DJ stop → bass punch → 4x4 return.",
+  "Drops: the build rises for 8 bars, one beat of total silence, then the drop slams in at full width.",
 ].join("\n\n");
 const V8_STRUCTURE = [
+  "Silence: one beat of dead air.",
   "DROP:\nclassic rave kick and octave bass remain dominant, with orchestra hits, shout cuts, scratches and modern bass punches.",
   "BREAK:\n4–8 bars only.\nRave piano, chopped vocals and brief half-time street groove.",
+  "Silence: one bar, frozen frame.",
   "FINAL DROP:\nmaximum sample density, hard 4x4 kick, rave bass, orchestra hits, hoover cuts, scratches, English MC chops, breakbeat fills and modern low-end impact.",
 ].join("\n\n");
 const V8_MOOD = "Mood: flashy, aggressive, ecstatic, decadent, street-ready.\n\nPriority:\nDJ sampling > Juliana rave groove > orchestra hits > street-dance rhythm > rave bass.";
 const V8_RATIO = "Lyrics: only English 100%.";
-const V8_HEAD = [V8_BPM, V8_MAIN, V8_CORE, V8_EXTRA, V8_STRUCTURE, V8_MOOD, V8_RATIO].join("\n\n");
+const V8_BODY = [V8_MAIN, V8_CORE, V8_EXTRA, V8_STRUCTURE, V8_MOOD, V8_RATIO].join("\n\n");
 
 async function v8ThemePool(page) {
   const pool = [];
@@ -725,22 +754,22 @@ async function v8ThemePool(page) {
   return [...new Set(pool)].filter((t) => !/japanese/i.test(t));
 }
 
-test("V8 はベース 1 つで、指定のプロンプトだけを候補に持つ（古文・視点・Never use・Avoid は無し）", async () => {
+test("V8 はベース 1 つで、指定のプロンプト ＋ BPM 22 候補 ＋ 止まって続く流れ ＋ Never use を持つ（古文・視点・Avoid は無し）", async () => {
   const { page, errors } = await openPage();
   await useVersion(page, "v8");
   assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 1);
-  assert.deepEqual(await candidates(page, "bpm"), [V8_BPM]);
+  assert.deepEqual(await candidates(page, "bpm"), V8_BPMS);
   assert.deepEqual(await candidates(page, "main"), [V8_MAIN]);
   assert.deepEqual(await candidates(page, "core"), [V8_CORE]);
   assert.deepEqual(await candidates(page, "extra"), [V8_EXTRA]);
   assert.deepEqual(await candidates(page, "structure"), [V8_STRUCTURE]);
   assert.deepEqual(await candidates(page, "vocal"), [V8_MOOD]);
   assert.deepEqual(await candidates(page, "ratio"), [V8_RATIO]);
-  assert.deepEqual(await candidates(page, "never"), []);
+  assert.deepEqual(await candidates(page, "never"), [V8_NEVER]);
   assert.deepEqual(await candidates(page, "avoid"), []);
   assert.equal(await page.isVisible("#classicalCard"), false);
   assert.equal(await page.isVisible('[data-slot="perspective"]'), false);
-  assert.equal(await page.isVisible('[data-slot="never"]'), false);
+  assert.equal(await page.isVisible('[data-slot="never"]'), true);
   assert.equal(await page.isVisible('[data-slot="avoid"]'), false);
   assert.deepEqual(errors, []);
   await page.close();
@@ -777,20 +806,28 @@ test("V8 のジャンル置換は既定 ON で makina を置き換え、候補�
   await page.close();
 });
 
-test("V8 は置換を切ると指定のプロンプトそのまま ＋ 英語のみの Lyrics ＋ V1〜V7 のテーマになる", async () => {
+test("V8 は置換を切ると BPM 候補 ＋ 指定のプロンプト ＋ 英語のみの Lyrics ＋ V1〜V7 のテーマ ＋ 最後に Never use になる", async () => {
   const { page, errors } = await openPage();
   const pool = await v8ThemePool(page);
   await useVersion(page, "v8");
   await page.uncheck("#swapEnabled");
   await page.click('#patternChips .chip[data-id="1"]');
-  for (let i = 0; i < 15; i++) {
+  const bpms = new Set();
+  for (let i = 0; i < 30; i++) {
     const out = await randomOutput(page);
     assert.ok(out.length <= 3000, "長さ " + out.length);
-    assert.ok(out.startsWith(V8_HEAD + "\n\n"), "指定のプロンプトの順で組み立てる");
-    const theme = out.slice(V8_HEAD.length + 2);
+    const bpm = out.split("\n\n")[0];
+    assert.ok(V8_BPMS.includes(bpm), "BPM は候補から: " + bpm);
+    bpms.add(bpm);
+    const tail = "\n\nNever use:\n" + V8_NEVER;
+    assert.ok(out.endsWith(tail), "Never use が最後に付く");
+    const body = bpm + "\n\n" + V8_BODY + "\n\n";
+    assert.ok(out.startsWith(body), "指定のプロンプトの順で組み立てる");
+    const theme = out.slice(body.length, out.length - tail.length);
     assert.ok(pool.includes(theme), "テーマは V1〜V7 から: " + theme.slice(0, 60));
-    assert.doesNotMatch(out, /Never use:|Avoid:|POV:|classical-Japanese|code-switching/);
+    assert.doesNotMatch(out, /Avoid:|POV:|classical-Japanese|code-switching/);
   }
+  assert.ok(bpms.size > 1, "BPM がランダムに変わる");
   assert.deepEqual(errors, []);
   await page.close();
 });

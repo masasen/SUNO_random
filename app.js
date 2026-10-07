@@ -17,7 +17,7 @@ const HINT_SLOT_AVOID = "ベースに関わらず出力の最後に必ず付き�
 const HINT_THEME = "V4 の 14 曲の歌詞メタデータから起こしたテーマ 14 ＋ 追加テーマ（共通モチーフ・ボス戦・旧 V1〜V3 のテーマ）。全版共通です。<b><code>---</code> だけの行で区切って 1 テーマ</b>。テーマの中の改行や空行は同じテーマの続きとして扱われます。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。";
 const HINT_TRIM_SETS = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は念押し系（Keep …）→ 副次説明（Future Bass is secondary …）→ サンプリング指示の順に落とすので、Phase / Stage の記述は最後まで残ります。メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
 const HINT_TRIM_DJ = "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Mix → Drops の順に落とすので、DJ サンプリング指示は最後まで残ります。BPM・キー / メイン・Core sound・Structure の骨格・テーマ・古文・Never use・Avoid は削られません。";
-const HINT_PERSPECTIVE = "1 行 1 候補。歌詞を誰の口で語るか（一人称の独白 / あなたへの語りかけ / 過去の自分との対話 / 私たち など）をテーマとは別に抽選し、テーマの直後に <code>POV:</code> の 1 行で入れます。自動トリムでは削られません。V5 / V8 で同じ候補です。";
+const HINT_PERSPECTIVE = "1 行 1 候補。歌詞を誰の口で語るか（一人称の独白 / あなたへの語りかけ / 過去の自分との対話 / 私たち など）をテーマとは別に抽選し、テーマの直後に <code>POV:</code> の 1 行で入れます。自動トリムでは削られません。V5 だけが候補を持ちます。";
 const HINT_V12 = {
   pattern: "prompt.md の 10 パターン。選ぶと BPM / メイン / Core sound / 補足 / Structure / ボーカル の各候補欄が、そのパターンの内容で先頭に差し込まれます（既存の候補は残ります）。",
   bpm: "1 行 1 候補。生成時にランダムで 1 行選ばれます。",
@@ -46,8 +46,8 @@ const DROP_ORDER_DJ = [/^mix\b/i, /^fx\b/i, /^drops?\b/i, /^samples?\b/i];
 const DROP_ORDER_V5 = [/^keep\b/i, /\b(is|remains) secondary\b/i, /^electronic, not\b/i, /^mix\b/i, /^drops?\b/i, /^samples?\b/i];
 // V7 は V2 形式とグリッチ系の両方の段落を持つので、念押し → 副ジャンル → ミックス → ドロップ → サンプリングの順に落とす
 const DROP_ORDER_V7 = [/^keep\b/i, /\b(is|remains) (secondary|contrast)\b/i, /^mix\b/i, /^drops?\b/i, /sampl(e|ing)/i];
-// V8 は V5 由来のベースも持つので、V7 の順に V5 の「Electronic, not」を足す。Modulation（転調）は最後まで残る
-const DROP_ORDER_V8 = [/^keep\b/i, /\b(is|remains) (secondary|contrast)\b/i, /^electronic, not\b/i, /^mix\b/i, /^drops?\b/i, /sampl(e|ing)/i];
+// V8 は Priority の先頭が DJ sampling なので、念押し → 切り替え → 振付アクセント → モダン要素 → フック → サンプルの再利用 → 比率の順に落とし、DJ サンプリングの段落を最後まで残す
+const DROP_ORDER_V8 = [/^keep\b/i, /^alternate\b/i, /^add choreography\b/i, /^modern\b/i, /^main hook\b/i, /^reuse\b/i, /^\d+% classic\b/i];
 
 const HINT_V7 = Object.assign({}, HINT_V12, {
   pattern: "No.1〜No.11 は V6（V2 の 11 パターン）。No.12〜No.33 は HyperTechno #06 / #07 の 22 曲で、入力プロンプト（gpt_description_prompt）のメイン行が <code>Genre:</code> / <code>Main genre:</code> で始まる V6 に無い型なので、1 曲 1 ベースにしています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Never use / Avoid（古文の文面を持つ曲は古文も）が、その曲の入力どおりに差し替わります。",
@@ -117,16 +117,19 @@ const VERSIONS = [
     hints: HINT_V7,
   },
   {
-    id: "v8", badge: "V8 / V7 × V5 CORE FUSION", bpmTitle: "BPM・キー", swapFrom: "Future Bass", swapEnabled: true,
-    extrasFirst: true, dropOrder: DROP_ORDER_V8, swapCaseSensitive: true,
-    hints: Object.assign({}, HINT_V7, {
-      pattern: "No.1〜No.33 は V7 の全ベースで、Core sound だけ元の Core の後ろに <code>plus …</code> で V5 の Core sound の音色（ベース / リード / 質感から、元に無いもの）を足しています。No.34〜No.201 は V5 の 12 ベースのメイン行の先頭 <code>Genre: Glitchcore hip-hop.</code> を <code>makina x Anime Opening x Addictive tracks x ○○ EDM MiX</code> の 14 通りに置き換えたもので、ほかの欄と Never use / Avoid は V5 のままです（最後のサビ直前の転調も残ります）。",
-      core: "1 行 1 候補（長文 1 行）。V7 の 33 ベースに V5 の音色を融合した Core と、V5 の 12 ベースの Core です。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。",
-      theme: "V4 の共通テーマ ＋ V6 の追加テーマ ＋ V7 の 28 曲のテーマ ＋ V5 の 12 ベースのテーマ。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
-      never: "V7 の候補に V5 の Never use を足しています。パターンを選ぶとそのベースの行になります。",
-      avoid: "V7 の候補に V5 の Avoid を足しています。パターンを選ぶとそのベースの行になります。",
-      trim: "自動トリムは「サウンド補足のブロック → ボーカル指定の補足行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。サウンド補足は Keep → 副ジャンル → Electronic, not → Mix → Drops → Samples の順に落とし、Modulation（転調）は最後まで残ります。Structure の転調の行も残します。",
-      perspective: HINT_PERSPECTIVE,
+    id: "v8", badge: "V8 / JULIANA RAVE SAMPLER", bpmTitle: "BPM", swapFrom: "makina", swapEnabled: true,
+    extrasFirst: true, dropOrder: DROP_ORDER_V8, ownLyrics: true,
+    themesFrom: ["v1", "v2", "v3", "v4", "v5", "v6", "v7"], themeExclude: /japanese/i,
+    hints: Object.assign({}, HINT_V12, {
+      pattern: "Early-90s Japanese Rave Techno × Juliana-era rave の 1 プロンプトを各欄に分けたベース 1 つだけです。ほかの候補は足していません（Lyrics だけ英語のみに変えています）。選ぶと BPM / メイン / Core sound / 補足 / Structure / Mood・Priority / Lyrics 比率 が差し替わります。",
+      genre: "メイン 1 行目の <code>makina</code> を、下の候補（V1〜V7 の置換語から makina とメイン行に既にある語を除いたもの）からランダムに選んだ 1 語で置き換えます。既定は ON です。",
+      core: "1 行 1 候補（長文 1 行）。指定のプロンプトの Core sound です。<code>(Core sound を入れない)</code> の行が選ばれると、この段落ごと出力から外れます。",
+      extra: "指定のプロンプトの比率・DJ サンプリング・Main hook・Modern・振付アクセント・Alternate。<b><code>---</code> だけの行で区切って 1 候補</b>。3000 文字を超えたときは Keep → Alternate → 振付アクセント → Modern → Main hook → Reuse → 比率 の順に段落が削られ、DJ サンプリングの段落は最後まで残ります。",
+      structure: "指定のプロンプトの DROP / BREAK / FINAL DROP。<b><code>---</code> だけの行で区切って 1 候補</b>。",
+      vocal: "V8 はボーカル指定の代わりに Mood / Priority を持ちます（Structure の後ろ、Lyrics の前に入ります）。<b><code>---</code> だけの行で区切って 1 候補</b>。",
+      ratio: "1 行 1 候補。言語は英語のみです。",
+      theme: "V1〜V7 の歌詞テーマから、日本語を指定するものを除いて流用しています。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
+      trim: "自動トリムは「サウンド補足のブロック → Mood・Priority の行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。BPM / メイン・Core sound・テーマは削られません。",
     }),
   },
 ];
@@ -135,14 +138,17 @@ let version = null;
 let data = null;
 
 // 版のデータに V4 の共通データを重ねる。版が自前の themes を持つ（V6）ときは共通テーマの後ろに足す。版が自前で持つ Never use / Avoid（V3 の両方、V1 / V2 の Avoid）はそちらを優先する。
-// ownLyrics の版（V5）は歌詞テーマ・古文も自前のものだけを使う。borrow の版は指定のキーを別の版のデータから借りる
+// ownLyrics の版（V5 / V8）は歌詞テーマ・古文も自前のものだけを使う。borrow の版は指定のキーを別の版のデータから借りる。
+// themesFrom の版（V8）は指定の版の歌詞テーマを借り、themeExclude に当たるテーマ（日本語を指定するもの）を除く
 function resolveData(id) {
   const own = window.PROMPT_DATA[id];
   const def = VERSIONS.find((v) => v.id === id);
   if (def.ownLyrics) {
     const borrowed = {};
     if (def.borrow) for (const key of def.borrow.keys) borrowed[key] = window.PROMPT_DATA[def.borrow.from][key];
-    return Object.assign({}, own, borrowed, { themes: uniq(own.patterns.map((p) => p.theme).filter(Boolean).concat(own.themes)) });
+    const lent = (def.themesFrom || []).flatMap((from) => resolveData(from).themes);
+    const themes = uniq(own.patterns.map((p) => p.theme).filter(Boolean).concat(own.themes, lent));
+    return Object.assign({}, own, borrowed, { themes: def.themeExclude ? themes.filter((t) => !def.themeExclude.test(t)) : themes });
   }
   const shared = window.PROMPT_DATA[SHARED_SOURCE];
   const ownThemes = id === SHARED_SOURCE ? [] : own.themes || [];
@@ -868,6 +874,8 @@ function applyVersionView() {
   $('[data-title="bpm"]').textContent = version.bpmTitle;
   $("#classicalCard").hidden = !data.classical;
   $('[data-slot="perspective"]').hidden = !data.perspectives;
+  $('[data-slot="never"]').hidden = !data.never.length;
+  $('[data-slot="avoid"]').hidden = !data.avoid.length;
   // 非表示のカードを飛ばして左列の番号を振り直す
   let n = 0;
   $$(".col-left .card").forEach((card) => {

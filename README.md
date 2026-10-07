@@ -20,7 +20,7 @@ SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリで�
 | V5 | Glitchcore hip-hop × sweet Lolita female vocals の 12 ベース | V5 専用の 1 行 | なし |
 | V6 | V2 の 11 パターン（歌詞テーマ・補足・Structure・ボーカル・比率は V2 の 2 倍） | Never use は V4 と共通、Avoid は V2 と同じ 1 行 | なし |
 | V7 | V6 の 11 パターン ＋ HyperTechno #06 / #07 の 22 曲（ほか 6 曲は候補欄へ） | 28 曲の入力に出てくる行をすべて候補に持つ | なし |
-| V8 | V7 の 33 ベース（Core に V5 の音色を融合）＋ V5 の 12 ベース × メイン 1 行目 14 通り | V7 の候補 ＋ V5 の 1 行（V5 由来のベースは V5 の行） | なし |
+| V8 | Early-90s Japanese Rave Techno × Juliana-era rave の 1 プロンプト（テーマは V1〜V7 から流用） | 使わない | なし |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4・V6 で共通です（V6 はさらに追加テーマを持ちます）。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -55,11 +55,12 @@ SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリで�
 
 ## V8 の書き方
 
-- **No.1〜No.33**: V7 の全ベースそのままで、Core sound だけ元の Core の後ろに `plus …` で V5 の Core sound の音色を足しています。V5 の Core をベース（808 / reese など）・リード（music-box / harpsichord / cowbell など）・質感（glass / static / error-beep など）に分け、元の Core に同じ音色（語）が無いものを 1 つずつ選びます。元の Core に 808 / reese / distorted bass がある曲はベースを足さず、質感を 2 つにします。Core sound の無かった No.5 / No.10 は V5 の音色だけで Core を作っています。
-- **No.34〜No.201**: V5 の 12 ベースのメイン行の先頭 `Genre: Glitchcore hip-hop.` を `Genre: makina x Anime Opening x Addictive tracks x ○○ EDM MiX.` に置き換えた 14 通り（Glitchcore hip-hop / jersey club / hyperpop / breakcore / digicore / nightcore / drift phonk / drum & bass / trap / rage / jungle / happy hardcore / future bass / hyper techno）。ほかの欄と Never use / Avoid は V5 のままで、最後のサビ直前の転調（BPM 行・Final chorus 行・Modulation）も残ります。
-- 古文フラグメントは V7 と同じく常に 1 つ入ります（V5 由来のベースにも入ります）。
-- ベースボタンが 201 個あるので、ベースパターンの欄は高さ 320px でスクロールします。
-- 視点・語り手は V5 と同じ 12 候補を `prompt-data-v8.js` の `PERSPECTIVES` に持ち、テーマの直後に `POV:` の 1 行で入れます（古文フラグメントより前）。V1〜V4 / V6 / V7 には視点の候補が無く、カードは表示されません。
+- 指定の 1 プロンプト（`BPM 160–170.` / `Genre: Early-90s Japanese Rave Techno x Hardcore Rave x Hyper Techno x happy hardcore x makina EDM.` …）を各欄に分けたベース 1 つ（Juliana Rave Sampler）だけを持ち、ほかの候補は足していません。
+- 欄の割り当て: BPM / メイン（Genre 行）/ Core sound / 補足（80% classic … 〜 Alternate）/ Structure（DROP / BREAK / FINAL DROP）/ ボーカル指定の欄に Mood・Priority / Lyrics 比率。出力は Structure → Mood・Priority → Lyrics → テーマの順です。
+- 言語は英語のみで、Lyrics は `Lyrics: only English 100%.` の 1 行です（元の code-switching の指定は外しています）。
+- 歌詞テーマは `app.js` が V1〜V7 のテーマを借り、日本語を指定するテーマ（`Japanese` を含むもの）を除いて使います。
+- ジャンル置換は既定 ON で、メイン行の `makina` を V1〜V7 の置換語（makina を含む語と、メイン行に既にある hyper techno / happy hardcore を除く 45 語）のどれかに置き換えます。
+- 古文フラグメント・視点・Never use・Avoid は使わず、カードも隠れます。
 
 ## 候補データの更新
 

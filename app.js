@@ -8,7 +8,7 @@ const NO_CORE = "(Core sound を入れない)";
 const ACTIVE_VERSION_KEY = "suno_random_active_version";
 
 // ── 版の定義 ──
-// 候補データは prompt-data-v1〜v8.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
+// 候補データは prompt-data-v1〜v9.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
 
 // 歌詞テーマ・古文フラグメント・Never use / Avoid は V4 のデータを正本として全版で共通に使う
 const SHARED_SOURCE = "v4";
@@ -134,6 +134,19 @@ const VERSIONS = [
       trim: "自動トリムは「サウンド補足のブロック → Mood・Priority の行 → Structure の中間行」の順に削って 3000 文字以内へ収めます。BPM / メイン・Core sound・テーマは削られません。",
     }),
   },
+  {
+    id: "v9", badge: "V9 / EDM REMOVE 21 ALBUMS", bpmTitle: "BPM・キー", swapFrom: "street dance", swapEnabled: false,
+    extrasFirst: false, dropOrder: DROP_ORDER_DJ, ownLyrics: true,
+    neverFrom: ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"], classicalFrom: ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"],
+    hints: Object.assign({}, HINT_DJ, {
+      pattern: "testwork/Adobe_MCP/MP3/EDM/Remove の 21 アルバム（307 曲）を、1 アルバム 1 ベースにしています。BPM・キー・帯域バランス・ステレオ幅・音量の山谷・終わり方は音源の実測値（アルバム内の中央値と代表曲）、ムード・声の人物像・言語比率・歌詞テーマは MP3 のメタデータ（タイトル・歌詞）から起こしています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Avoid が、そのアルバムの内容で先頭に差し込まれます（既存の候補は残ります）。",
+      genre: "メイン 1 行目の <code>street dance</code> を、下の候補からランダムに選んだ 1 語で置き換えます。完全模倣が目的なので既定は OFF です。崩したいときだけ有効にしてください。",
+      theme: "21 アルバムの歌詞メタデータから新しく起こした V9 専用のテーマ（1 アルバム 3 件、V1〜V8 のテーマは使いません）。<b><code>---</code> だけの行で区切って 1 テーマ</b>。<code>Chorus:</code> の行だけは自動で古文指示の後ろへ回されます。",
+      never: "V1〜V8 の Never use をすべて候補にしています。生成のたびにランダムで 1 行選ばれます。",
+      avoid: "アルバムごとの Avoid（声の性別・音の方向から外したいもの）です。パターンを選ぶとそのアルバムの行になります。",
+      analysis: "先頭は 21 アルバム全体のまとめ。続く 21 件は各アルバムの実測値（librosa: BPM / キー / 帯域比 / ステレオ幅 / H/P 比 / オンセット密度 / 2 秒窓の音量推移 / 終わり方、アルバム内の中央値）と、歌詞メタデータから読んだ要点です。",
+    }),
+  },
 ];
 
 let version = null;
@@ -142,12 +155,15 @@ let data = null;
 // 版のデータに V4 の共通データを重ねる。版が自前の themes を持つ（V6）ときは共通テーマの後ろに足す。版が自前で持つ Never use / Avoid（V3 の両方、V1 / V2 の Avoid）はそちらを優先する。
 // ownLyrics の版（V5 / V8）は歌詞テーマ・古文も自前のものだけを使う。borrow の版は指定のキーを別の版のデータから借りる。
 // themesFrom の版（V8）は指定の版の歌詞テーマを借り、themeExclude に当たるテーマ（日本語を指定するもの）を除く
+// neverFrom / classicalFrom の版（V9）は指定の版の Never use / 古文フラグメントをすべて集めて候補にする
 function resolveData(id) {
   const own = window.PROMPT_DATA[id];
   const def = VERSIONS.find((v) => v.id === id);
   if (def.ownLyrics) {
     const borrowed = {};
     if (def.borrow) for (const key of def.borrow.keys) borrowed[key] = window.PROMPT_DATA[def.borrow.from][key];
+    if (def.neverFrom) borrowed.never = uniq(def.neverFrom.flatMap((from) => resolveData(from).never));
+    if (def.classicalFrom) borrowed.classical = uniq(def.classicalFrom.flatMap((from) => toBlocks(resolveData(from).classical))).join(BLOCK_SEP);
     const lent = (def.themesFrom || []).flatMap((from) => resolveData(from).themes);
     const themes = uniq(own.patterns.map((p) => p.theme).filter(Boolean).concat(own.themes, lent));
     return Object.assign({}, own, borrowed, { themes: def.themeExclude ? themes.filter((t) => !def.themeExclude.test(t)) : themes });

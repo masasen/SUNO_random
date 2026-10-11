@@ -1,11 +1,11 @@
 # SUNO_random
 
-SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリです。画面上部の `V1` 〜 `V8` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V8 です。
+SUNO Simple Prompt Builder V1〜V9 の GitHub Pages 公開用リポジトリです。画面上部の `V1` 〜 `V9` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V9 です。
 
 ## ファイルの役割
 
 - `index.html`: 画面の外枠とスタイル。候補データの更新時は編集不要です。
-- `prompt-data-v1.js` 〜 `prompt-data-v8.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
+- `prompt-data-v1.js` 〜 `prompt-data-v9.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
 - `app.js`: 版の切り替え、ランダム抽選、組み立て、保存などの処理。版ごとの説明文・ジャンル置換の既定値・自動トリムで削る順もここにあります。
 - `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。`tests/fixtures/hypertechno-prompts.json` は V7 の元にした 28 曲の入力プロンプトです。
 
@@ -21,6 +21,7 @@ SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリで�
 | V6 | V2 の 11 パターン（歌詞テーマ・補足・Structure・ボーカル・比率は V2 の 2 倍） | Never use は V4 と共通、Avoid は V2 と同じ 1 行 | なし |
 | V7 | V6 の 11 パターン ＋ HyperTechno #06 / #07 の 22 曲（ほか 6 曲は候補欄へ） | 28 曲の入力に出てくる行をすべて候補に持つ | なし |
 | V8 | Early-90s Japanese Rave Techno × Juliana-era rave の 1 プロンプト（テーマは V1〜V7 から流用） | Never use は専用の 1 行、Avoid は使わない | なし |
+| V9 | testwork/Adobe_MCP/MP3/EDM/Remove の 21 アルバム（307 曲）を 1 アルバム 1 ベース | Never use は V1〜V8 の全候補、Avoid はアルバムごとの 1 行 | あり |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4・V6 で共通です（V6 はさらに追加テーマを持ちます）。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -64,6 +65,15 @@ SUNO Simple Prompt Builder V1〜V8 の GitHub Pages 公開用リポジトリで�
 - 一瞬止まってまた続く流れは V5 の書き方を借りています: 補足の最後に `Drops: the build rises for 8 bars, one beat of total silence, then the drop slams in at full width.`、Structure の DROP の前に `Silence: one beat of dead air.`、FINAL DROP の前に `Silence: one bar, frozen frame.`。
 - Never use は V5 の 1 行に `拍` を足したもので、プロンプトの最後に付きます。
 - 古文フラグメント・視点・Avoid は使わず、カードも隠れます。
+
+## V9 の書き方
+
+- `testwork/Adobe_MCP/MP3/EDM/Remove` の 21 アルバム（307 曲）を 1 アルバム 1 ベース（No.1〜No.21）にしています。組み立て方は V4 と同じです（BPM・キー / メイン / Core sound / 補足 Samples・Drops・Mix / Structure / ボーカル / Lyrics 比率 / テーマ / 古文 / Never use / Avoid）。
+- MP3 の ID3 には元プロンプトが無い（title / artist / comment / lyrics だけ）ので、音は全曲を librosa で実測しています（BPM・キー・帯域比・ステレオ幅・H/P 比・オンセット密度・2 秒窓の音量推移・終わり方）。アルバム内の中央値を BPM・キー行と Mix に、代表曲（中央値に近い曲）の音量推移をイントロ・谷（Breakdown）・山（Final chorus）・終わり方に使っています。実測値は音源解析メモに出ます。
+- きっと、またね（28 曲）だけは `.mp3.txt` に元プロンプトがあり、ジャンル・声質はそれに従っています。他のアルバムのジャンル・音色・声の人物像・ムード・言語比率は、歌詞メタデータを読んで起こしています。
+- 歌詞テーマは全曲の歌詞から新しく起こした V9 専用のもの（1 アルバム 3 件・計 63 件）で、V1〜V8 のテーマは使いません。既存曲の歌詞フレーズは引用していません。
+- 古文フラグメントは V1〜V8 の文面をすべて集めて候補にし（`app.js` の `classicalFrom`）、生成のたびに 1 つ入ります。Never use も V1〜V8 の全行を候補にしています（`neverFrom`）。
+- BPM は各アルバムの行に、各曲の実測 BPM・キーを足しています。ジャンル置換（`street dance` を置き換え）は V4 と同じく既定 OFF です。
 
 ## 候補データの更新
 

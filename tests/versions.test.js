@@ -47,12 +47,12 @@ async function randomOutput(page) {
   return page.inputValue("#outputText");
 }
 
-test("ヘッダーに V1〜V8 の切り替えボタンがあり、初回は V8", async () => {
+test("ヘッダーに V1〜V9 の切り替えボタンがあり、初回は V9", async () => {
   const { page, errors } = await openPage();
   const labels = await page.$$eval("#versionSwitch [data-ver]", (els) => els.map((e) => e.textContent.trim()));
-  assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8"]);
-  assert.match(await page.textContent("#versionBadge"), /^V8/);
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 1);
+  assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"]);
+  assert.match(await page.textContent("#versionBadge"), /^V9/);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 21);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -66,6 +66,7 @@ const CASES = [
   { id: "v6", chips: 11, classical: true, analysis: false },
   { id: "v7", chips: 33, classical: true, analysis: false },
   { id: "v8", chips: 1, classical: false, analysis: false, avoid: false },
+  { id: "v9", chips: 21, classical: true, analysis: true },
 ];
 
 for (const c of CASES) {
@@ -858,11 +859,11 @@ test("視点・語り手は V5 だけが候補を持ち、ランダム生成の�
   await page.close();
 });
 
-test("視点・語り手は V1〜V4 / V6〜V8 では隠れて出力にも入らない（V5 から切り替えても残らない）", async () => {
+test("視点・語り手は V1〜V4 / V6〜V9 では隠れて出力にも入らない（V5 から切り替えても残らない）", async () => {
   const { page } = await openPage();
   await useVersion(page, "v5");
   await randomOutput(page);
-  for (const id of ["v1", "v2", "v3", "v4", "v6", "v7", "v8"]) {
+  for (const id of ["v1", "v2", "v3", "v4", "v6", "v7", "v8", "v9"]) {
     await useVersion(page, id);
     assert.equal(await page.isVisible('[data-slot="perspective"]'), false, id + " の視点カードは隠れる");
     for (let i = 0; i < 3; i++) assert.doesNotMatch(await randomOutput(page), /^POV: /m, id + " に POV 行は入らない");
@@ -876,5 +877,95 @@ test("V5 で視点を固定するとランダム生成でも変わらない", as
   const first = (await randomOutput(page)).match(/^POV: .+$/m)[0];
   await page.click('[data-slot="perspective"] [data-pin]');
   for (let i = 0; i < 5; i++) assert.equal((await randomOutput(page)).match(/^POV: .+$/m)[0], first);
+  await page.close();
+});
+
+const OTHER_VERSIONS = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"];
+
+async function poolOf(page, key) {
+  const pool = [];
+  for (const id of OTHER_VERSIONS) {
+    await useVersion(page, id);
+    pool.push(...(await candidates(page, key)));
+  }
+  return [...new Set(pool)];
+}
+
+async function classicalOf(page) {
+  return page.$eval("#classicalText", (el) => [...new Set(el.value.replace(/\r\n?/g, "\n").split(/^[ \t]*-{3,}[ \t]*$/m).map((s) => s.trim()).filter(Boolean))]);
+}
+
+test("V9 は EDM/Remove の 21 アルバムを 1 アルバム 1 ベースにし、全ベースが実測の BPM・キーと解析メモを持つ", async () => {
+  const { page, errors } = await openPage();
+  await useVersion(page, "v9");
+  const names = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.textContent));
+  assert.equal(names.length, 21);
+  const src = await page.evaluate(() => window.PROMPT_DATA.v9.patterns.map((p) => [p.bpm, p.src && p.src.note, p.theme, p.avoid]));
+  for (const [bpm, note, theme, avoid] of src) {
+    assert.match(bpm, /^BPM \d+.*(major|minor)\.$/, "BPM・キー: " + bpm);
+    assert.ok(note && note.length > 40, "解析メモ");
+    assert.match(theme, /^Theme: /);
+    assert.match(avoid, /^Avoid: /);
+  }
+  assert.equal(await page.isVisible("#analysisCard"), true);
+  assert.equal(await page.$$eval("#analysisList > *", (els) => els.length), 22, "まとめ ＋ 21 アルバム");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("V9 の歌詞テーマは音源の歌詞から起こした専用のもので、V1〜V8 のテーマを 1 つも使わない", async () => {
+  const { page } = await openPage();
+  const pool = await poolOf(page, "theme");
+  await useVersion(page, "v9");
+  const themes = await candidates(page, "theme");
+  assert.ok(themes.length >= 42, "テーマ数: " + themes.length);
+  for (const t of themes) {
+    assert.ok(!pool.includes(t), "既存テーマを使わない: " + t.slice(0, 60));
+    assert.match(t, /^Theme: .+\nScenes: .+\nEmotion: .+\nChorus: .+$/, "Theme / Scenes / Emotion / Chorus の 4 行");
+  }
+  for (let i = 0; i < 10; i++) {
+    const out = await randomOutput(page);
+    const theme = out.match(/^Theme: .+$/m)[0];
+    assert.ok(themes.some((t) => t.startsWith(theme)), "出力のテーマは V9 の候補から");
+  }
+  await page.close();
+});
+
+test("V9 の Never use は V1〜V8 の Never use をすべて候補に持つ", async () => {
+  const { page } = await openPage();
+  const pool = await poolOf(page, "never");
+  await useVersion(page, "v9");
+  assert.deepEqual([...(await candidates(page, "never"))].sort(), [...pool].sort());
+  for (let i = 0; i < 10; i++) {
+    const out = await randomOutput(page);
+    const never = out.match(/Never use:\n(.+)/)[1];
+    assert.ok(pool.includes(never), "Never use は V1〜V8 から: " + never);
+  }
+  await page.close();
+});
+
+test("V9 の古文フラグメントは V1〜V8 の文面をすべて候補に持ち、どのベースでも 1 つだけ入る", async () => {
+  const { page, errors } = await openPage();
+  const pool = [];
+  for (const id of OTHER_VERSIONS) {
+    await useVersion(page, id);
+    if (await page.isVisible("#classicalCard")) pool.push(...(await classicalOf(page)));
+  }
+  await useVersion(page, "v9");
+  const own = await classicalOf(page);
+  assert.deepEqual([...own].sort(), [...new Set(pool)].sort());
+  const chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
+  for (const id of chips) {
+    await page.click('#patternChips .chip[data-id="' + id + '"]');
+    await page.click("#btnGenerate");
+    const out = await page.inputValue("#outputText");
+    assert.ok(out.length <= 3000, "No." + id + " の長さ " + out.length);
+    assert.equal(own.filter((c) => out.includes(c)).length, 1, "No." + id + " の古文は 1 つ");
+    assert.match(out, /Never use:\n/);
+    assert.match(out, /Avoid: /);
+    const themeToClassical = out.slice(out.indexOf("Theme:"), out.indexOf(CLASSICAL));
+    assert.doesNotMatch(themeToClassical, /^Chorus:/m, "テーマの Chorus 行は古文指示の後ろ");
+  }
+  assert.deepEqual(errors, []);
   await page.close();
 });

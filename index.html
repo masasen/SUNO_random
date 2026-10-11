@@ -506,6 +506,7 @@ textarea::placeholder { color: var(--fg-faint); }
         <button data-ver="v6">V6</button>
         <button data-ver="v7">V7</button>
         <button data-ver="v8">V8</button>
+        <button data-ver="v9">V9</button>
       </div>
       <div class="actions">
         <button class="btn-primary" id="btnGenerate">生成</button>
@@ -676,7 +677,7 @@ textarea::placeholder { color: var(--fg-faint); }
 
     <section class="card" id="classicalCard">
       <div class="card-head"><h2><span class="num">10</span>古文フラグメント（常時固定）</h2></div>
-      <p class="hint">テーマに関わらず必ず出力へ入ります（V1〜V4 共通で文面の初期値は prompt-data-v4.js。V5 では使いません）。テーマの <code>Chorus:</code> 行はこの指示の後ろへ回されます。文面だけ編集できます。V7 / V8 は <code>---</code> だけの行で区切った複数の文面を持ち、ランダム生成のたびに 1 つ選びます（パターンが文面を持つときはそれ）。</p>
+      <p class="hint">テーマに関わらず必ず出力へ入ります（V1〜V4 共通で文面の初期値は prompt-data-v4.js。V5 では使いません）。テーマの <code>Chorus:</code> 行はこの指示の後ろへ回されます。文面だけ編集できます。V7 / V9 は <code>---</code> だけの行で区切った複数の文面を持ち、ランダム生成のたびに 1 つ選びます（パターンが文面を持つときはそれ）。</p>
       <textarea id="classicalText" rows="4"></textarea>
     </section>
 
@@ -767,8 +768,8 @@ textarea::placeholder { color: var(--fg-faint); }
   </div>
 </main>
 <script>
-// 更新直後も最新の候補データを取得する。HTMLは画面、app.jsは処理、prompt-data-v1〜v8.jsは各版の候補データ。
-const DATA_FILES = ["prompt-data-v1.js", "prompt-data-v2.js", "prompt-data-v3.js", "prompt-data-v4.js", "prompt-data-v5.js", "prompt-data-v6.js", "prompt-data-v7.js", "prompt-data-v8.js"];
+// 更新直後も最新の候補データを取得する。HTMLは画面、app.jsは処理、prompt-data-v1〜v9.jsは各版の候補データ。
+const DATA_FILES = ["prompt-data-v1.js", "prompt-data-v2.js", "prompt-data-v3.js", "prompt-data-v4.js", "prompt-data-v5.js", "prompt-data-v6.js", "prompt-data-v7.js", "prompt-data-v8.js", "prompt-data-v9.js"];
 function showLoadError(file) {
   const message = document.querySelector("#msg");
   message.textContent = file + " を読み込めません。ページを再読み込みしてください。";

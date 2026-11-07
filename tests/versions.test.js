@@ -1009,6 +1009,7 @@ test("V10 は 10 ベースで、Structure は指定の 20 本（サビ始まり�
     assert.match(p.theme, /^Theme: .+\nScenes: .+\nEmotion: .+\nChorus: .+$/);
     assert.match(p.avoid, /^Avoid: .*fade-out/);
     assert.doesNotMatch(p.avoid, /key change/, "転調する構成があるので Avoid に key change を入れない");
+    assert.doesNotMatch(p.avoid, /half-time|trap|ballad intro|distortion/, "half-time・trap・静かなイントロ・歪みの構成があるので Avoid に入れない: " + p.avoid);
   }
   assert.deepEqual(errors, []);
   await page.close();
@@ -1177,17 +1178,24 @@ test("英単語の混ぜ方のスイッチは Lyrics 比率カードにあり、
   await page.close();
 });
 
-test("ON のとき日本語と英語を混ぜる比率の直後の行に、混ぜ方の候補が 1 本だけ入り、生成ごとに抽選される", async () => {
+test("ON のとき日本語と英語を混ぜる比率の直後の行に、混ぜ方の候補が 1 本だけ入り、ランダム生成で抽選・生成ボタンでは保つ", async () => {
   const { page, errors } = await openPage();
   await useVersion(page, "v10");
   const rules = await mixRules(page);
+  const ratio = "Lyrics: Japanese 70%, natural English 30%.";
+  await page.fill('[data-slot="ratio"] [data-src]', ratio);
+  const ruleOf = (out) => {
+    const lines = out.split("\n");
+    assert.equal(lines.filter((l) => l.startsWith("English mixing: ")).length, 1, "混ぜ方は 1 本だけ");
+    return lines[lines.indexOf(ratio) + 1];
+  };
   const seen = new Set();
   for (let i = 0; i < 25; i++) {
-    const next = await generateWithRatio(page, "Lyrics: Japanese 70%, natural English 30%.");
-    assert.ok(rules.includes(next), "比率の次の行は混ぜ方の候補: " + next);
-    const out = await page.inputValue("#outputText");
-    assert.equal(out.split("\n").filter((l) => l.startsWith("English mixing: ")).length, 1);
-    seen.add(next);
+    const rule = ruleOf(await randomOutput(page));
+    assert.ok(rules.includes(rule), "比率の次の行は混ぜ方の候補: " + rule);
+    seen.add(rule);
+    await page.click("#btnGenerate");
+    assert.equal(ruleOf(await page.inputValue("#outputText")), rule, "生成ボタンでは同じ混ぜ方を保つ");
   }
   assert.ok(seen.size > 1, "混ぜ方の候補がランダムに変わる");
   assert.deepEqual(errors, []);

@@ -987,27 +987,51 @@ function v10Sections(structure) {
   });
 }
 
-test("V10 は 10 ベースで、全ベースが解析した 74 小節の区画（タメと解放の位置）を同じ順・同じ小節数で持つ", async () => {
+const V10_STRUCTURES = fs.readFileSync(path.join(ROOT, "tests/fixtures/v10-structures.txt"), "utf8").trim().split(/\n---\n/);
+
+function structureOf(out) {
+  return out.match(/^Structure:\n(?:.+\n?)+/m)[0].trim();
+}
+
+test("V10 は 10 ベースで、Structure は指定の 20 本（サビ始まり・途中のジャンル転換などで崩した構成）だけを候補に持つ", async () => {
   const { page, errors } = await openPage();
   await useVersion(page, "v10");
   const pats = await page.evaluate(() => window.PROMPT_DATA.v10.patterns);
   assert.equal(pats.length, 10);
+  assert.equal(V10_STRUCTURES.length, 20);
+  assert.deepEqual(await candidates(page, "structure"), V10_STRUCTURES);
+  assert.ok(V10_STRUCTURES.filter((s) => /^Structure:\n(Chorus 1|Cold open):/.test(s)).length >= 4, "サビから始まる構成を含む");
   for (const p of pats) {
-    assert.match(p.structure, /^Structure:\n/);
-    const secs = v10Sections(p.structure);
-    assert.deepEqual(secs, V10_SECTIONS, p.name + " の区画");
-    assert.equal(secs.reduce((a, [, n]) => a + n, 0), 74);
+    assert.equal(p.structure, undefined, p.name + " は自前の Structure を持たない");
     assert.match(p.bpm, /^BPM 11[6-9]|^BPM 120/, p.name + " の BPM は実測 117.5 の近傍: " + p.bpm);
     assert.match(p.bpm, /(major|minor)/);
     assert.match(p.main, /dance-pop/, "ジャンル置換の対象語 dance-pop をメイン行に持つ");
     assert.match(p.theme, /^Theme: .+\nScenes: .+\nEmotion: .+\nChorus: .+$/);
-    assert.match(p.avoid, /^Avoid: .*key change/, "原曲は転調しないので Avoid に key change");
+    assert.match(p.avoid, /^Avoid: .*fade-out/);
+    assert.doesNotMatch(p.avoid, /key change/, "転調する構成があるので Avoid に key change を入れない");
   }
   assert.deepEqual(errors, []);
   await page.close();
 });
 
-test("V10 の補足は全候補が Hook と Tension & release の段落を持ち、どのベースで生成しても削られず 3000 文字以内に収まる", async () => {
+test("V10 はベースを選んでも Structure の選択を変えず、どのベースで生成しても指定の構成が削られずに入る", async () => {
+  const { page, errors } = await openPage();
+  await useVersion(page, "v10");
+  await page.click("#btnRandomGen");
+  const before = structureOf(await page.inputValue("#outputText"));
+  assert.ok(V10_STRUCTURES.includes(before));
+  const chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
+  for (const id of chips) {
+    await page.click('#patternChips .chip[data-id="' + id + '"]');
+    await page.click("#btnGenerate");
+    assert.equal(structureOf(await page.inputValue("#outputText")), before, "No." + id + " でも Structure はそのまま");
+  }
+  assert.deepEqual((await candidates(page, "structure")).sort(), [...V10_STRUCTURES].sort(), "Structure の候補はベースを選んでも 20 本のまま");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("V10 の補足は全候補が Hook と Tension & release の段落を持ち、どのベース・どの Structure でも削られず 3000 文字以内に収まる", async () => {
   const { page, errors } = await openPage();
   await useVersion(page, "v10");
   const extras = await candidates(page, "extra");
@@ -1016,21 +1040,24 @@ test("V10 の補足は全候補が Hook と Tension & release の段落を持ち
     assert.match(e, /^Tension & release: .+/m, "Tension & release 段落");
   }
   const chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
+  const longest = V10_STRUCTURES.reduce((a, b) => (b.length > a.length ? b : a));
   for (const id of chips) {
     await page.click('#patternChips .chip[data-id="' + id + '"]');
+    await page.fill('[data-slot="structure"] [data-src]', longest);
     await page.click("#btnGenerate");
     const out = await page.inputValue("#outputText");
     assert.ok(out.length <= 3000, "No." + id + " の長さ " + out.length);
     assert.match(out, /^Hook: /m);
     assert.match(out, /^Tension & release: /m);
-    assert.deepEqual(v10Sections(out.match(/^Structure:\n(?:.+\n?)+/m)[0].trim()), V10_SECTIONS, "No." + id + " の Structure は削られない");
+    assert.equal(structureOf(out), longest, "No." + id + " の Structure は削られない");
   }
+  await page.fill('[data-slot="structure"] [data-src]', V10_STRUCTURES.join("\n---\n"));
   for (let i = 0; i < 30; i++) {
     const out = await randomOutput(page);
     assert.ok(out.length <= 3000, "ランダムの長さ " + out.length);
     assert.match(out, /^Hook: /m);
     assert.match(out, /^Tension & release: /m);
-    assert.deepEqual(v10Sections(out.match(/^Structure:\n(?:.+\n?)+/m)[0].trim()), V10_SECTIONS);
+    assert.ok(V10_STRUCTURES.includes(structureOf(out)), "Structure は指定の 20 本から");
   }
   assert.deepEqual(errors, []);
   await page.close();
@@ -1105,5 +1132,110 @@ test("V10 の音源解析メモは全体まとめ ＋ 74 小節を区画ごと�
   }
   assert.equal(await page.isVisible("#analysisCard"), true);
   assert.equal(await page.$$eval("#analysisList > *", (els) => els.length), 1 + rows.length, "まとめ ＋ 解析行");
+  await page.close();
+});
+
+// ── 英単語の混ぜ方: Lyrics 比率の行の後ろに、行の中で英単語を混ぜる指示（頻度と位置）を付け足すスイッチ ──
+
+const ALL_VERSIONS = ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10"];
+
+async function mixRules(page) {
+  return (await page.inputValue("#mixText")).split("\n").map((l) => l.trim()).filter(Boolean);
+}
+
+async function generateWithRatio(page, ratio) {
+  await page.fill('[data-slot="ratio"] [data-src]', ratio);
+  await page.click("#btnGenerate");
+  const out = await page.inputValue("#outputText");
+  const lines = out.split("\n");
+  const i = lines.indexOf(ratio);
+  assert.ok(i >= 0, "比率の行が出力にある: " + ratio);
+  return lines[i + 1];
+}
+
+test("英単語の混ぜ方のスイッチは Lyrics 比率カードにあり、全版で既定 ON・同じ候補（頻度と冒頭 / 中間 / 行末の散らし方）を持つ", async () => {
+  const { page, errors } = await openPage();
+  let first = null;
+  for (const id of ALL_VERSIONS) {
+    await useVersion(page, id);
+    assert.equal(await page.$eval("#mixEnabled", (el) => !!el.closest('[data-slot="ratio"]')), true, id + " は比率カードの中");
+    assert.equal(await page.isChecked("#mixEnabled"), true, id + " は既定 ON");
+    const rules = await mixRules(page);
+    assert.ok(rules.length >= 3, id + " の候補数 " + rules.length);
+    for (const r of rules) {
+      assert.match(r, /^English mixing: /);
+      assert.match(r, /never in every line/, "全行には入れない: " + r);
+      assert.match(r, /\bstart\b/, "冒頭: " + r);
+      assert.match(r, /\b(middle|mid-line)\b/, "中間: " + r);
+      assert.match(r, /\bend\b/, "行末: " + r);
+      assert.match(r, /not always at the line end/, "行末に偏らせない: " + r);
+    }
+    if (first) assert.deepEqual(rules, first, id + " も同じ候補");
+    first = rules;
+  }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("ON のとき日本語と英語を混ぜる比率の直後の行に、混ぜ方の候補が 1 本だけ入り、生成ごとに抽選される", async () => {
+  const { page, errors } = await openPage();
+  await useVersion(page, "v10");
+  const rules = await mixRules(page);
+  const seen = new Set();
+  for (let i = 0; i < 25; i++) {
+    const next = await generateWithRatio(page, "Lyrics: Japanese 70%, natural English 30%.");
+    assert.ok(rules.includes(next), "比率の次の行は混ぜ方の候補: " + next);
+    const out = await page.inputValue("#outputText");
+    assert.equal(out.split("\n").filter((l) => l.startsWith("English mixing: ")).length, 1);
+    seen.add(next);
+  }
+  assert.ok(seen.size > 1, "混ぜ方の候補がランダムに変わる");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("英語のみ・日本語のみ・全小節で混ぜる・行末だけに英語を置く比率には、混ぜ方を付けない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v10");
+  for (const ratio of [
+    "Lyrics: only English 100%.",
+    "Lyrics: Japanese only.",
+    "Lyrics: Japanese only, short two-to-four-word phrases.",
+    "Lyrics: Japanese and English mixed inside every bar, switching mid-line.",
+    "Lyrics: Japanese 70%, English 30%, English only at the end of each line as a short tag.",
+  ]) {
+    const next = await generateWithRatio(page, ratio);
+    assert.ok(!next || !next.startsWith("English mixing: "), ratio + " には付けない");
+  }
+  await page.close();
+});
+
+test("混ぜ方を OFF にすると出力に入らず、OFF と編集した候補は再読み込み後も版ごとに残る", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v10");
+  await page.uncheck("#mixEnabled");
+  const next = await generateWithRatio(page, "Lyrics: Japanese 70%, natural English 30%.");
+  assert.ok(!next || !next.startsWith("English mixing: "));
+  await page.fill("#mixText", "English mixing: custom rule, never in every line, start, middle, end, not always at the line end.");
+  await page.waitForTimeout(500);
+  await page.reload();
+  await page.waitForSelector("#patternChips .chip");
+  assert.equal(await page.isChecked("#mixEnabled"), false);
+  assert.deepEqual(await mixRules(page), ["English mixing: custom rule, never in every line, start, middle, end, not always at the line end."]);
+  await useVersion(page, "v9");
+  assert.equal(await page.isChecked("#mixEnabled"), true, "ほかの版は既定のまま");
+  await page.close();
+});
+
+test("混ぜ方を ON のまま全版でランダム生成しても 3000 文字以内に収まる", async () => {
+  const { page, errors } = await openPage();
+  for (const id of ALL_VERSIONS) {
+    await useVersion(page, id);
+    for (let i = 0; i < 8; i++) {
+      const out = await randomOutput(page);
+      assert.ok(out.length <= 3000, id + " の長さ " + out.length);
+    }
+  }
+  assert.deepEqual(errors, []);
   await page.close();
 });

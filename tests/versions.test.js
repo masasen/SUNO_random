@@ -39,7 +39,7 @@ async function openPage() {
 
 async function useVersion(page, id) {
   await page.click('#versionSwitch [data-ver="' + id + '"]');
-  await page.waitForFunction((v) => document.querySelector("#versionBadge").textContent.startsWith(v.toUpperCase()), id);
+  await page.waitForFunction((v) => document.querySelector("#versionBadge").textContent.startsWith(v.toUpperCase() + " "), id);
 }
 
 async function randomOutput(page) {
@@ -47,12 +47,12 @@ async function randomOutput(page) {
   return page.inputValue("#outputText");
 }
 
-test("ヘッダーに V1〜V9 の切り替えボタンがあり、初回は V9", async () => {
+test("ヘッダーに V1〜V10 の切り替えボタンがあり、初回は V10", async () => {
   const { page, errors } = await openPage();
   const labels = await page.$$eval("#versionSwitch [data-ver]", (els) => els.map((e) => e.textContent.trim()));
-  assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"]);
-  assert.match(await page.textContent("#versionBadge"), /^V9/);
-  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 21);
+  assert.deepEqual(labels, ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10"]);
+  assert.match(await page.textContent("#versionBadge"), /^V10/);
+  assert.equal(await page.$$eval("#patternChips .chip", (els) => els.length), 10);
   assert.deepEqual(errors, []);
   await page.close();
 });
@@ -67,6 +67,7 @@ const CASES = [
   { id: "v7", chips: 33, classical: true, analysis: false },
   { id: "v8", chips: 1, classical: false, analysis: false, avoid: false },
   { id: "v9", chips: 21, classical: true, analysis: true },
+  { id: "v10", chips: 10, classical: false, analysis: true },
 ];
 
 for (const c of CASES) {
@@ -863,7 +864,7 @@ test("視点・語り手は V1〜V4 / V6〜V9 では隠れて出力にも入ら�
   const { page } = await openPage();
   await useVersion(page, "v5");
   await randomOutput(page);
-  for (const id of ["v1", "v2", "v3", "v4", "v6", "v7", "v8", "v9"]) {
+  for (const id of ["v1", "v2", "v3", "v4", "v6", "v7", "v8", "v9", "v10"]) {
     await useVersion(page, id);
     assert.equal(await page.isVisible('[data-slot="perspective"]'), false, id + " の視点カードは隠れる");
     for (let i = 0; i < 3; i++) assert.doesNotMatch(await randomOutput(page), /^POV: /m, id + " に POV 行は入らない");
@@ -967,5 +968,142 @@ test("V9 の古文フラグメントは V1〜V8 の文面をすべて候補に�
     assert.doesNotMatch(themeToClassical, /^Chorus:/m, "テーマの Chorus 行は古文指示の後ろ");
   }
   assert.deepEqual(errors, []);
+  await page.close();
+});
+
+// ── V10: Tokyo Short Sleeper の曲組み立て（タメと解放）を全ベースに持たせる版 ──
+
+const V10_SECTIONS = [
+  ["Intro", 5], ["Verse 1", 8], ["Pre-chorus", 8], ["Chorus", 7], ["Stop", 1], ["Interlude", 4], ["Verse 2", 6], ["Drum-out", 2],
+  ["Chorus 2", 7], ["Stop", 1], ["Drop", 8], ["Breakdown", 6], ["Tension", 3], ["Final chorus", 7], ["Ending", 1],
+];
+const V10_FORBIDDEN = /CROWNHEAD|Tokyo Short Sleeper|初音ミク|Hatsune|Miku|vocaloid|ボカロ|スッキリ|蹴飛ばし|ショートスリーパー|おかけになった電話|マナーモード|渋谷/i;
+
+function v10Sections(structure) {
+  return structure.split("\n").slice(1).map((l) => {
+    const m = l.match(/^([A-Za-z0-9 -]+) \((\d+) bars?\): .+$/);
+    assert.ok(m, "Structure の行は「区画 (N bars): 内容」: " + l);
+    return [m[1], Number(m[2])];
+  });
+}
+
+test("V10 は 10 ベースで、全ベースが解析した 74 小節の区画（タメと解放の位置）を同じ順・同じ小節数で持つ", async () => {
+  const { page, errors } = await openPage();
+  await useVersion(page, "v10");
+  const pats = await page.evaluate(() => window.PROMPT_DATA.v10.patterns);
+  assert.equal(pats.length, 10);
+  for (const p of pats) {
+    assert.match(p.structure, /^Structure:\n/);
+    const secs = v10Sections(p.structure);
+    assert.deepEqual(secs, V10_SECTIONS, p.name + " の区画");
+    assert.equal(secs.reduce((a, [, n]) => a + n, 0), 74);
+    assert.match(p.bpm, /^BPM 11[6-9]|^BPM 120/, p.name + " の BPM は実測 117.5 の近傍: " + p.bpm);
+    assert.match(p.bpm, /(major|minor)/);
+    assert.match(p.main, /dance-pop/, "ジャンル置換の対象語 dance-pop をメイン行に持つ");
+    assert.match(p.theme, /^Theme: .+\nScenes: .+\nEmotion: .+\nChorus: .+$/);
+    assert.match(p.avoid, /^Avoid: .*key change/, "原曲は転調しないので Avoid に key change");
+  }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("V10 の補足は全候補が Hook と Tension & release の段落を持ち、どのベースで生成しても削られず 3000 文字以内に収まる", async () => {
+  const { page, errors } = await openPage();
+  await useVersion(page, "v10");
+  const extras = await candidates(page, "extra");
+  for (const e of extras) {
+    assert.match(e, /^Hook: .+/m, "Hook 段落");
+    assert.match(e, /^Tension & release: .+/m, "Tension & release 段落");
+  }
+  const chips = await page.$$eval("#patternChips .chip", (els) => els.map((e) => e.dataset.id));
+  for (const id of chips) {
+    await page.click('#patternChips .chip[data-id="' + id + '"]');
+    await page.click("#btnGenerate");
+    const out = await page.inputValue("#outputText");
+    assert.ok(out.length <= 3000, "No." + id + " の長さ " + out.length);
+    assert.match(out, /^Hook: /m);
+    assert.match(out, /^Tension & release: /m);
+    assert.deepEqual(v10Sections(out.match(/^Structure:\n(?:.+\n?)+/m)[0].trim()), V10_SECTIONS, "No." + id + " の Structure は削られない");
+  }
+  for (let i = 0; i < 30; i++) {
+    const out = await randomOutput(page);
+    assert.ok(out.length <= 3000, "ランダムの長さ " + out.length);
+    assert.match(out, /^Hook: /m);
+    assert.match(out, /^Tension & release: /m);
+    assert.deepEqual(v10Sections(out.match(/^Structure:\n(?:.+\n?)+/m)[0].trim()), V10_SECTIONS);
+  }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("V10 は原曲のアーティスト名・曲名・歌詞・サンプル音声の文言をどこにも書かない", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v10");
+  for (const key of ["bpm", "main", "core", "extra", "structure", "vocal", "ratio", "theme", "never", "avoid"]) {
+    for (const c of await candidates(page, key)) assert.doesNotMatch(c, V10_FORBIDDEN, key + ": " + c.slice(0, 60));
+  }
+  for (let i = 0; i < 10; i++) assert.doesNotMatch(await randomOutput(page), V10_FORBIDDEN);
+  await page.close();
+});
+
+test("V10 の歌詞テーマは新規の専用テーマで、V1〜V9 のテーマを使わず、V10 の Never use の語を含まない", async () => {
+  const { page } = await openPage();
+  const pool = [];
+  for (const id of OTHER_VERSIONS.concat("v9")) {
+    await useVersion(page, id);
+    pool.push(...(await candidates(page, "theme")));
+  }
+  await useVersion(page, "v10");
+  const themes = await candidates(page, "theme");
+  const never = (await candidates(page, "never")).flatMap((l) => l.replace(/\.$/, "").split(/,\s*/)).map((w) => w.trim()).filter(Boolean);
+  assert.ok(themes.length >= 30, "テーマ数: " + themes.length);
+  for (const t of themes) {
+    assert.ok(!pool.includes(t), "既存テーマを使わない: " + t.slice(0, 60));
+    assert.match(t, /^Theme: .+\nScenes: .+\nEmotion: .+\nChorus: .+$/);
+    for (const w of never) assert.ok(!t.toLowerCase().includes(w.toLowerCase()), "テーマに Never use の語「" + w + "」を入れない: " + t.slice(0, 60));
+  }
+  await page.close();
+});
+
+test("V10 の Never use / Avoid は専用の候補で、出力の最後に Never use → Avoid の順で付く", async () => {
+  const { page } = await openPage();
+  const neverPool = [];
+  for (const id of OTHER_VERSIONS.concat("v9")) {
+    await useVersion(page, id);
+    neverPool.push(...(await candidates(page, "never")));
+  }
+  await useVersion(page, "v10");
+  const never = await candidates(page, "never");
+  assert.ok(never.length >= 1);
+  for (const n of never) assert.ok(!neverPool.includes(n), "V10 専用の Never use");
+  for (let i = 0; i < 10; i++) {
+    const out = await randomOutput(page);
+    assert.match(out, /Never use:\n.+\n\nAvoid: .+$/);
+  }
+  await page.close();
+});
+
+test("V10 のジャンル置換は既定 OFF で dance-pop を置き換える", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v10");
+  assert.equal(await page.inputValue("#swapFrom"), "dance-pop");
+  assert.equal(await page.isChecked("#swapEnabled"), false);
+  assert.ok((await candidates(page, "genre")).length >= 10);
+  await page.close();
+});
+
+test("V10 の音源解析メモは全体まとめ ＋ 74 小節を区画ごとに追った行（小節番号・秒・コード・ベース・メロディ）を持つ", async () => {
+  const { page } = await openPage();
+  await useVersion(page, "v10");
+  const rows = await page.evaluate(() => window.PROMPT_DATA.v10.analysis);
+  assert.ok(rows.length >= V10_SECTIONS.length, "区画ごとの行: " + rows.length);
+  for (const [name] of V10_SECTIONS) assert.ok(rows.some((r) => r.name.startsWith(name)), "解析メモに " + name);
+  for (const r of rows.filter((r) => V10_SECTIONS.some(([n]) => r.name.startsWith(n)))) {
+    assert.match(r.at, /bars? \d+/, r.name + " の小節番号");
+    assert.match(r.at, /\d+:\d\d/, r.name + " の時刻");
+    assert.ok(r.note.length > 60, r.name + " のメモ");
+  }
+  assert.equal(await page.isVisible("#analysisCard"), true);
+  assert.equal(await page.$$eval("#analysisList > *", (els) => els.length), 1 + rows.length, "まとめ ＋ 解析行");
   await page.close();
 });

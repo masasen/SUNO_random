@@ -8,7 +8,7 @@ const NO_CORE = "(Core sound を入れない)";
 const ACTIVE_VERSION_KEY = "suno_random_active_version";
 
 // ── 版の定義 ──
-// 候補データは prompt-data-v1〜v9.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
+// 候補データは prompt-data-v1〜v10.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
 
 // 歌詞テーマ・古文フラグメント・Never use / Avoid は V4 のデータを正本として全版で共通に使う
 const SHARED_SOURCE = "v4";
@@ -48,6 +48,8 @@ const DROP_ORDER_V5 = [/^keep\b/i, /\b(is|remains) secondary\b/i, /^electronic, 
 const DROP_ORDER_V7 = [/^keep\b/i, /\b(is|remains) (secondary|contrast)\b/i, /^mix\b/i, /^drops?\b/i, /sampl(e|ing)/i];
 // V8 は Priority の先頭が DJ sampling なので、念押し → 切り替え → 振付アクセント → モダン要素 → フック → サンプルの再利用 → 比率の順に落とし、DJ サンプリングの段落を最後まで残す
 const DROP_ORDER_V8 = [/^keep\b/i, /^alternate\b/i, /^add choreography\b/i, /^modern\b/i, /^main hook\b/i, /^reuse\b/i, /^\d+% classic\b/i];
+// V10 は曲組み立て（Hook / Tension & release）が芯なので、Mix → Samples → Bass の順に落とし、この 2 段落は最後まで残す
+const DROP_ORDER_V10 = [/^mix\b/i, /^samples?\b/i, /^bass\b/i];
 
 const HINT_V7 = Object.assign({}, HINT_V12, {
   pattern: "No.1〜No.11 は V6（V2 の 11 パターン）。No.12〜No.33 は HyperTechno #06 / #07 の 22 曲で、入力プロンプト（gpt_description_prompt）のメイン行が <code>Genre:</code> / <code>Main genre:</code> で始まる V6 に無い型なので、1 曲 1 ベースにしています。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Never use / Avoid（古文の文面を持つ曲は古文も）が、その曲の入力どおりに差し替わります。",
@@ -145,6 +147,23 @@ const VERSIONS = [
       never: "V1〜V8 の Never use をすべて候補にしています。生成のたびにランダムで 1 行選ばれます。",
       avoid: "アルバムごとの Avoid（声の性別・音の方向から外したいもの）です。パターンを選ぶとそのアルバムの行になります。",
       analysis: "先頭は 21 アルバム全体のまとめ。続く 21 件は各アルバムの実測値（librosa: BPM / キー / 帯域比 / ステレオ幅 / H/P 比 / オンセット密度 / 2 秒窓の音量推移 / 終わり方、アルバム内の中央値）と、歌詞メタデータから読んだ要点です。",
+    }),
+  },
+  {
+    id: "v10", badge: "V10 / SHORT SLEEPER BLUEPRINT", bpmTitle: "BPM・キー", swapFrom: "dance-pop", swapEnabled: false,
+    extrasFirst: false, dropOrder: DROP_ORDER_V10, ownLyrics: true,
+    hints: Object.assign({}, HINT_DJ, {
+      pattern: "解析元 1 曲（2:34・74 小節）の曲組み立てを、音色の違う 10 ベースに持たせています。どのベースも Structure は同じ 15 区画・同じ小節数（タメと解放の位置）、補足の Hook / Tension & release も同じ作り方で、BPM・キー / ジャンル / 音色 / 声 / テーマだけが違います。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Avoid が差し替わります。解析元の名前・歌詞・サンプル音声の文言はどこにも入れていません。",
+      genre: "メイン 1 行目の <code>dance-pop</code> を、下の候補からランダムに選んだ 1 語で置き換えます。曲組み立てを保ったまま音色だけ崩したいときに使います。既定は OFF です。",
+      bpm: "1 行 1 候補。各ベースの BPM・キー（実測 117.5 BPM の近傍 116〜120）と、そのほかの組み合わせです。",
+      extra: "Hook（サビ頭の伸ばし → ペンタトニック下降）/ Tension & release（プレサビの沈み → 駆け上がり、サビ前 2 小節の 2 音連打とキックのフィル、サビ後の 1 小節アカペラ）/ Bass / Samples / Mix。<b><code>---</code> だけの行で区切って 1 候補</b>。3000 文字を超えたときは Mix → Samples → Bass の順に段落が削られ、Hook と Tension & release は最後まで残ります。",
+      structure: "解析元の 74 小節を 15 区画に分けたもの（Intro 5 / Verse 1 8 / Pre-chorus 8 / Chorus 7 / Stop 1 / Interlude 4 / Verse 2 6 / Drum-out 2 / Chorus 2 7 / Stop 1 / Drop 8 / Breakdown 6 / Tension 3 / Final chorus 7 / Ending 1）。区画名・小節数・抜く楽器は全ベース共通で、イントロ・間奏の語り・ドロップの上モノだけベースごとに違います。<b><code>---</code> だけの行で区切って 1 候補</b>。",
+      theme: "V10 専用の新しいテーマ（10 ベース分 ＋ 追加 32）。V1〜V9 のテーマは使わず、V10 の Never use の語も含みません。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
+      ratio: "1 行 1 候補。解析元は日本語が主で、英語はフックの短い語とカタカナ語だけです。",
+      never: "V10 専用の 2 行（使い古された歌詞の語）。生成のたびにランダムで 1 行選ばれ、出力の Avoid の前に付きます。",
+      avoid: "ベースごとの Avoid。解析元は転調もフェードアウトもしないので、全行に key change と fade-out を入れています。",
+      trim: "自動トリムは Mix → Samples → Bass の順に補足の段落を削って 3000 文字以内へ収めます。Hook・Tension & release・Structure の 15 区画は削られません（どの組み合わせでも削らずに収まる長さにしています）。",
+      analysis: "先頭は全体のまとめ。続く 15 件は 74 小節を区画ごとに追った結果（小節番号・時刻・音量、コード、ベースの音、旋律の音、ドラムの抜き方）、最後の 4 件は旋律・ベース・ドラム・音色のまとめです。demucs で 4 ステムに分け、basic-pitch / pyin で 1 音ずつ採譜し、librosa で拍・キー・帯域を測っています。音名は実音、度数は B♭ = 1。",
     }),
   },
 ];
@@ -547,10 +566,13 @@ function renderPatternChips() {
 
 // ── 音源解析メモ ──
 
+// analysis を持つ版（V10）は、まとめの後ろに区画ごとの解析行を並べる
 function renderAnalysis() {
   $("#analysisCard").hidden = !data.reference;
   if (!data.reference) { $("#analysisList").innerHTML = ""; return; }
-  const rows = [{ name: data.reference.name, src: data.reference }].concat(data.patterns.filter((p) => p.src));
+  const rows = [{ name: data.reference.name, src: data.reference }]
+    .concat((data.analysis || []).map((a) => ({ name: a.name, src: a })))
+    .concat(data.patterns.filter((p) => p.src));
   $("#analysisList").innerHTML = rows.map((p) =>
     '<div class="list-item">' +
       '<div class="meta"><span>' + esc(p.name) + "</span><span>" + esc(p.src.at) + "</span></div>" +

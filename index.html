@@ -420,6 +420,7 @@ textarea::placeholder { color: var(--fg-faint); }
 .check input { accent-color: var(--cyan); width: 15px; height: 15px; cursor: pointer; }
 
 .check-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
+.mix-row { margin: 12px 0 0; }
 
 /* ── 出力 ── */
 
@@ -648,6 +649,11 @@ textarea::placeholder { color: var(--fg-faint); }
       <p class="hint">1 行 1 候補。日本語と英語の比率をここで振ります。</p>
       <div class="picked empty" data-picked>未選択</div>
       <textarea data-src rows="5"></textarea>
+      <div class="check-row mix-row">
+        <label class="check"><input type="checkbox" id="mixEnabled" checked /><span>英単語を行の中に混ぜる（冒頭・中間・行末に散らす）</span></label>
+      </div>
+      <p class="hint">ON のとき、日本語と英語を混ぜる比率の次の行に、下の候補から 1 本を抽選して付けます（1 行 1 候補・全版共通の初期値）。英語のみ・日本語のみ・「全小節で混ぜる」「行末だけ英語」の比率には付けません。</p>
+      <textarea id="mixText" rows="4"></textarea>
     </section>
 
     <section class="card" data-slot="theme" data-kind="block">

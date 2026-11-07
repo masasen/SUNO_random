@@ -7,6 +7,19 @@ const NO_SWAP = "(置換しない)";
 const NO_CORE = "(Core sound を入れない)";
 const ACTIVE_VERSION_KEY = "suno_random_active_version";
 
+// 英単語の混ぜ方: 日本語と英語を混ぜる比率の次の行に 1 本付ける。全行に入れず、行の冒頭・中間・行末へ散らすよう指示する
+const MIX_RULES = [
+  "English mixing: in about 1 of every 3 lines, drop a single English word or short phrase inside the Japanese line, never in every line; spread it evenly across the start, the middle and the end of lines, not always at the line end.",
+  "English mixing: only in about 1 of every 4 lines, slip one short English word into the Japanese line, never in every line; put it at the start in some lines, mid-line in others and at the end in others, not always at the line end.",
+  "English mixing: in about half of the lines, verses included, switch to a short English phrase inside the Japanese line, never in every line; rotate the switch point between the start, the middle and the end, not always at the line end.",
+];
+// 英語のみ・日本語のみ・混ぜ方を自前で決めている比率には付けない
+const MIX_SKIP = /japanese only|only japanese|every bar|end of each line|mostly instrumental/i;
+
+function mixApplies(ratio) {
+  return /japanese/i.test(ratio) && /english/i.test(ratio) && !MIX_SKIP.test(ratio);
+}
+
 // ── 版の定義 ──
 // 候補データは prompt-data-v1〜v10.js が window.PROMPT_DATA へ登録する。ここは版ごとの画面文言と処理の違いだけを持つ。
 
@@ -153,16 +166,16 @@ const VERSIONS = [
     id: "v10", badge: "V10 / SHORT SLEEPER BLUEPRINT", bpmTitle: "BPM・キー", swapFrom: "dance-pop", swapEnabled: false,
     extrasFirst: false, dropOrder: DROP_ORDER_V10, ownLyrics: true,
     hints: Object.assign({}, HINT_DJ, {
-      pattern: "解析元 1 曲（2:34・74 小節）の曲組み立てを、音色の違う 10 ベースに持たせています。どのベースも Structure は同じ 15 区画・同じ小節数（タメと解放の位置）、補足の Hook / Tension & release も同じ作り方で、BPM・キー / ジャンル / 音色 / 声 / テーマだけが違います。選ぶと BPM・キー / メイン / Core sound / 補足 / Structure / ボーカル / Lyrics 比率 / テーマ / Avoid が差し替わります。解析元の名前・歌詞・サンプル音声の文言はどこにも入れていません。",
+      pattern: "解析元 1 曲（2:34・74 小節）のフックとタメと解放の作り方を、音色の違う 10 ベースに持たせています。どのベースも補足の Hook / Tension & release は同じ作り方で、BPM・キー / ジャンル / 音色 / 声 / テーマだけが違います。選ぶと BPM・キー / メイン / Core sound / 補足 / ボーカル / Lyrics 比率 / テーマ / Avoid が差し替わります。Structure はベースと切り離した 20 本から抽選するので、ベースを選んでも変わりません。解析元の名前・歌詞・サンプル音声の文言はどこにも入れていません。",
       genre: "メイン 1 行目の <code>dance-pop</code> を、下の候補からランダムに選んだ 1 語で置き換えます。曲組み立てを保ったまま音色だけ崩したいときに使います。既定は OFF です。",
       bpm: "1 行 1 候補。各ベースの BPM・キー（実測 117.5 BPM の近傍 116〜120）と、そのほかの組み合わせです。",
       extra: "Hook（サビ頭の伸ばし → ペンタトニック下降）/ Tension & release（プレサビの沈み → 駆け上がり、サビ前 2 小節の 2 音連打とキックのフィル、サビ後の 1 小節アカペラ）/ Bass / Samples / Mix。<b><code>---</code> だけの行で区切って 1 候補</b>。3000 文字を超えたときは Mix → Samples → Bass の順に段落が削られ、Hook と Tension & release は最後まで残ります。",
-      structure: "解析元の 74 小節を 15 区画に分けたもの（Intro 5 / Verse 1 8 / Pre-chorus 8 / Chorus 7 / Stop 1 / Interlude 4 / Verse 2 6 / Drum-out 2 / Chorus 2 7 / Stop 1 / Drop 8 / Breakdown 6 / Tension 3 / Final chorus 7 / Ending 1）。区画名・小節数・抜く楽器は全ベース共通で、イントロ・間奏の語り・ドロップの上モノだけベースごとに違います。<b><code>---</code> だけの行で区切って 1 候補</b>。",
+      structure: "サビ始まり・途中のジャンル転換・偽エンディング・テンポの段上げ・後半ほど静かになる構成など、1 曲の中で大きく変わる 20 本。全ベース共通で、ベースを選んでも差し替わりません。<b><code>---</code> だけの行で区切って 1 候補</b>。",
       theme: "V10 専用の新しいテーマ（10 ベース分 ＋ 追加 32）。V1〜V9 のテーマは使わず、V10 の Never use の語も含みません。<b><code>---</code> だけの行で区切って 1 テーマ</b>。",
       ratio: "1 行 1 候補。解析元は日本語が主で、英語はフックの短い語とカタカナ語だけです。",
       never: "V10 専用の 2 行（使い古された歌詞の語）。生成のたびにランダムで 1 行選ばれ、出力の Avoid の前に付きます。",
-      avoid: "ベースごとの Avoid。解析元は転調もフェードアウトもしないので、全行に key change と fade-out を入れています。",
-      trim: "自動トリムは Mix → Samples → Bass の順に補足の段落を削って 3000 文字以内へ収めます。Hook・Tension & release・Structure の 15 区画は削られません（どの組み合わせでも削らずに収まる長さにしています）。",
+      avoid: "ベースごとの Avoid。解析元はフェードアウトしないので全行に fade-out を入れています。Structure に転調・half-time・trap・歪み・静かなイントロの構成があるため、key change・half-time trap drums・trap hi-hats・distortion・slow ballad intro は入れていません。",
+      trim: "自動トリムは Mix → Samples → Bass の順に補足の段落を削って 3000 文字以内へ収めます。Hook・Tension & release・Structure の全行は削られません（どの組み合わせでも削らずに収まる長さにしています）。",
       analysis: "先頭は全体のまとめ。続く 15 件は 74 小節を区画ごとに追った結果（小節番号・時刻・音量、コード、ベースの音、旋律の音、ドラムの抜き方）、最後の 4 件は旋律・ベース・ドラム・音色のまとめです。demucs で 4 ステムに分け、basic-pitch / pyin で 1 音ずつ採譜し、librosa で拍・キー・帯域を測っています。音名は実音、度数は B♭ = 1。",
     }),
   },
@@ -316,6 +329,7 @@ function rollAll(respectPins) {
     rollSlot(key);
   }
   classicalPicked = pickOne(toBlocks($("#classicalText").value));
+  mixPicked = pickOne(toLines($("#mixText").value));
 }
 
 // 古文フラグメントは常に 1 つ入る。--- 区切りで複数の文面を持つ版（V7）は、その中から 1 つを選んで保つ
@@ -350,7 +364,7 @@ function collectState() {
     extraParas: slots.extra.picked ? slots.extra.picked.split(/\n\s*\n/).map((s) => s.trim()).filter(Boolean) : [],
     structureLines,
     vocalLines,
-    ratio: slots.ratio.picked,
+    ratio: withMixRule(slots.ratio.picked),
     themeBody,
     perspective: slots.perspective.picked,
     classical,
@@ -358,6 +372,16 @@ function collectState() {
     never: slots.never.picked,
     avoid: slots.avoid.picked,
   };
+}
+
+// 混ぜ方は古文と同じく、ランダム生成で抽選し、生成ボタンでは同じものを保つ
+let mixPicked = "";
+
+function withMixRule(ratio) {
+  if (!ratio || !$("#mixEnabled").checked || !mixApplies(ratio)) return ratio;
+  const list = toLines($("#mixText").value);
+  if (!list.includes(mixPicked)) mixPicked = pickOne(list);
+  return mixPicked ? ratio + "\n" + mixPicked : ratio;
 }
 
 function applyGenreSwap(state) {
@@ -546,6 +570,7 @@ function hoistCandidate(key, value) {
 
 function applyPattern(pattern) {
   for (const field of PATTERN_FIELDS) {
+    if (field === "structure" && !pattern.structure) continue;
     hoistCandidate(field, field === "core" ? (pattern.core || NO_CORE) : pattern[field]);
   }
   const optional = PATTERN_OPTIONAL_FIELDS.filter((field) => pattern[field]);
@@ -557,7 +582,7 @@ function applyPattern(pattern) {
   $$("#patternChips .chip").forEach((c) => c.classList.toggle("active", Number(c.dataset.id) === pattern.id));
   saveState();
   const extraLabel = optional.map((f) => " / " + FIELD_LABELS[f]).join("") + (pattern.classical ? " / 古文" : "");
-  setMsg(pattern.name + " を読み込みました。" + version.bpmTitle + " / メイン / Core sound / 補足 / Structure / ボーカル" + extraLabel + " を差し替え済みです。", "ok");
+  setMsg(pattern.name + " を読み込みました。" + version.bpmTitle + " / メイン / Core sound / 補足" + (pattern.structure ? " / Structure" : "") + " / ボーカル" + extraLabel + " を差し替え済みです。", "ok");
 }
 
 function renderPatternChips() {
@@ -629,6 +654,8 @@ function currentSnapshot() {
     swapFrom: $("#swapFrom").value,
     swapEnabled: $("#swapEnabled").checked,
     swapAll: $("#swapAll").checked,
+    mixEnabled: $("#mixEnabled").checked,
+    mixText: $("#mixText").value,
   };
 }
 
@@ -646,6 +673,8 @@ function restoreSnapshot(snap) {
   if (typeof snap.swapFrom === "string") $("#swapFrom").value = snap.swapFrom;
   if (typeof snap.swapEnabled === "boolean") $("#swapEnabled").checked = snap.swapEnabled;
   if (typeof snap.swapAll === "boolean") $("#swapAll").checked = snap.swapAll;
+  if (typeof snap.mixEnabled === "boolean") $("#mixEnabled").checked = snap.mixEnabled;
+  if (typeof snap.mixText === "string") $("#mixText").value = snap.mixText;
   for (const key of SLOT_KEYS) setPicked(key, "");
 }
 
@@ -675,6 +704,7 @@ function saveNow() {
       snapshot: currentSnapshot(),
       picked: SLOT_KEYS.reduce((acc, k) => (acc[k] = slots[k].picked, acc), {}),
       classicalPicked,
+      mixPicked,
       output: $("#outputText").value,
       autoTrim: $("#optAutoTrim").checked,
       autoCopy: $("#optAutoCopy").checked,
@@ -700,6 +730,7 @@ function loadState() {
   restoreSnapshot(saved.snapshot);
   if (saved.picked) for (const key of SLOT_KEYS) setPicked(key, saved.picked[key] || "");
   classicalPicked = typeof saved.classicalPicked === "string" ? saved.classicalPicked : "";
+  mixPicked = typeof saved.mixPicked === "string" ? saved.mixPicked : "";
   if (typeof saved.output === "string") $("#outputText").value = saved.output;
   return true;
 }
@@ -712,6 +743,8 @@ function loadDefaults() {
   $("#swapFrom").value = version.swapFrom;
   $("#swapEnabled").checked = version.swapEnabled;
   $("#swapAll").checked = false;
+  $("#mixEnabled").checked = true;
+  $("#mixText").value = MIX_RULES.join("\n");
 }
 
 // ── 固定トグル ──
@@ -817,6 +850,8 @@ function bindEvents() {
   });
 
   $("#classicalText").addEventListener("input", saveState);
+  $("#mixEnabled").addEventListener("change", saveState);
+  $("#mixText").addEventListener("input", saveState);
   $("#swapFrom").addEventListener("input", saveState);
   $("#swapEnabled").addEventListener("change", saveState);
   $("#swapAll").addEventListener("change", saveState);
@@ -935,6 +970,7 @@ function switchVersion(id) {
   renderAnalysis();
   for (const key of SLOT_KEYS) { setPin(key, false); setPicked(key, ""); }
   classicalPicked = "";
+  mixPicked = "";
   $("#outputText").value = "";
   $("#trimNote").textContent = "";
   // 保存内容に無いスロット（後から足した視点など）が前の版の候補のまま残らないよう、初期値を敷いてから重ねる

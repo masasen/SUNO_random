@@ -7,7 +7,7 @@ SUNO Simple Prompt Builder V1〜V10 の GitHub Pages 公開用リポジトリで
 - `index.html`: 画面の外枠とスタイル。候補データの更新時は編集不要です。
 - `prompt-data-v1.js` 〜 `prompt-data-v10.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
 - `app.js`: 版の切り替え、ランダム抽選、組み立て、保存などの処理。版ごとの説明文・ジャンル置換の既定値・自動トリムで削る順もここにあります。
-- `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。`tests/fixtures/hypertechno-prompts.json` は V7 の元にした 28 曲の入力プロンプトです。
+- `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。`tests/fixtures/hypertechno-prompts.json` は V7 の元にした 28 曲の入力プロンプト、`tests/fixtures/v10-structures.txt` は V10 の Structure 20 本です。
 
 ## 版ごとの違い
 
@@ -79,11 +79,19 @@ SUNO Simple Prompt Builder V1〜V10 の GitHub Pages 公開用リポジトリで
 ## V10 の書き方
 
 - 解析元 1 曲（2:34・74 小節・実測 117.5 BPM・B♭ minor）を demucs で 4 ステムに分け、basic-pitch / pyin でボーカル・上モノ・ベースを 1 音ずつ採譜し、ドラムは 16 分グリッドでキック・スネア・ハットの有無を、全小節のステム別音量・コードと合わせて読んでいます。区画ごとの結果は音源解析メモに出ます。
-- 曲の芯は「キャッチーなフック」と「タメ → 解放」の繰り返しです。全 10 ベースが同じ Structure（15 区画・小節数 Intro 5 / Verse 1 8 / Pre-chorus 8 / Chorus 7 / Stop 1 / Interlude 4 / Verse 2 6 / Drum-out 2 / Chorus 2 7 / Stop 1 / Drop 8 / Breakdown 6 / Tension 3 / Final chorus 7 / Ending 1 = 74 小節）を持ち、イントロ・間奏の語り・ドロップの上モノだけベースごとに違います。
+- 曲の芯は「キャッチーなフック」と「タメ → 解放」の繰り返しで、全 10 ベースの補足に同じ作り方を持たせています。
+- Structure はベースと切り離した全ベース共通の 20 本（`STRUCTURES`）から抽選します。サビ始まり・コールドオープン・途中のジャンル転換・偽エンディング・テンポの段上げ・後半ほど静かになる構成など、1 曲の中で大きく変わる組み立てで、ベースを選んでも Structure は変わりません。
 - 補足は Hook（サビ頭で 5 度を ♭VI の上に伸ばし、ベースが半音下の V に落ちてペンタトニックで下降）/ Tension & release（プレサビの沈み → 1 拍 1 音の駆け上がり、サビ前 2 小節の 2 音連打とキックのフィル、サビ後の 1 小節アカペラ）/ Bass / Samples / Mix の 5 段落です。3000 文字を超えたときは Mix → Samples → Bass の順に削り、Hook・Tension & release・Structure は削りません。
-- BPM は実測 117.5 の近傍（116〜120）、ジャンル置換（`dance-pop` を置き換え）は既定 OFF です。転調・フェードアウトはしない曲なので、全ベースの Avoid に入れています。
+- BPM は実測 117.5 の近傍（116〜120）、ジャンル置換（`dance-pop` を置き換え）は既定 OFF です。フェードアウトはしない曲なので全ベースの Avoid に入れています。Structure に転調・half-time・trap・歪み・静かなイントロの構成があるため、key change・half-time trap drums・trap hi-hats・distortion・slow ballad intro は Avoid に入れていません。
 - 歌詞テーマ（42 件）・Never use（2 行）は V10 専用の新規で、テーマには Never use の語を入れていません。解析元のアーティスト名・曲名・歌詞・サンプル音声の文言はプロンプトのどこにも入れていません（テストで確認）。古文フラグメント・視点は使いません。
 - 採譜の生データ（小節表・ノート列・解析スクリプト）は `analysis/v10/` に置き、公開リポジトリには含めません（`.gitignore`）。
+
+## 英単語の混ぜ方（全版共通）
+
+- Lyrics 比率カードのスイッチ「英単語を行の中に混ぜる」（既定 ON）を入れると、日本語と英語を混ぜる比率の次の行に `English mixing: ...` を 1 本付けます。全行には入れず（3 行に 1 回 / 4 行に 1 回 / 半分ほどの 3 段階）、英語を行の冒頭・中間・行末へ散らして行末に偏らせない指示です。
+- 候補は 1 行 1 候補で編集でき、ON / OFF と編集内容は版ごとに保存されます。ランダム生成で抽選し、生成ボタンでは同じものを保ちます。
+- 英語のみ・日本語のみ・「全小節で混ぜる（every bar）」「行末だけ英語（end of each line）」の比率には付けません。
+- SUNO は歌詞を行単位で扱うため、指定は小節ではなく行の中の位置です。歌詞を自分で貼る場合は貼った歌詞が優先されます。
 
 ## 候補データの更新
 

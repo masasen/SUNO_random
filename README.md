@@ -1,11 +1,11 @@
 # SUNO_random
 
-SUNO Simple Prompt Builder V1〜V9 の GitHub Pages 公開用リポジトリです。画面上部の `V1` 〜 `V9` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V9 です。
+SUNO Simple Prompt Builder V1〜V10 の GitHub Pages 公開用リポジトリです。画面上部の `V1` 〜 `V10` ボタンで、使うプロンプト候補を切り替えます。初めて開いたときは V10 です。
 
 ## ファイルの役割
 
 - `index.html`: 画面の外枠とスタイル。候補データの更新時は編集不要です。
-- `prompt-data-v1.js` 〜 `prompt-data-v9.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
+- `prompt-data-v1.js` 〜 `prompt-data-v10.js`: 各版のプロンプト候補データ。通常はこれらのファイルだけを編集します。
 - `app.js`: 版の切り替え、ランダム抽選、組み立て、保存などの処理。版ごとの説明文・ジャンル置換の既定値・自動トリムで削る順もここにあります。
 - `tests/`: 版の切り替えと出力を確かめる E2E テスト（`npm install` のあと `npm test`）。`tests/fixtures/hypertechno-prompts.json` は V7 の元にした 28 曲の入力プロンプトです。
 
@@ -22,6 +22,7 @@ SUNO Simple Prompt Builder V1〜V9 の GitHub Pages 公開用リポジトリで�
 | V7 | V6 の 11 パターン ＋ HyperTechno #06 / #07 の 22 曲（ほか 6 曲は候補欄へ） | 28 曲の入力に出てくる行をすべて候補に持つ | なし |
 | V8 | Early-90s Japanese Rave Techno × Juliana-era rave の 1 プロンプト（テーマは V1〜V7 から流用） | Never use は専用の 1 行、Avoid は使わない | なし |
 | V9 | testwork/Adobe_MCP/MP3/EDM/Remove の 21 アルバム（307 曲）を 1 アルバム 1 ベース | Never use は V1〜V8 の全候補、Avoid はアルバムごとの 1 行 | あり |
+| V10 | 解析元 1 曲（Tokyo Short Sleeper）の 74 小節の曲組み立てを、音色の違う 10 ベースに持たせる | Never use は V10 専用の 2 行、Avoid はベースごとの 1 行 | あり（区画ごと 15 件 ＋ まとめ 4 件） |
 
 歌詞テーマと古文フラグメントは `prompt-data-v4.js` を正本として V1〜V4・V6 で共通です（V6 はさらに追加テーマを持ちます）。V5 は歌詞テーマ・Never use・Avoid を `prompt-data-v5.js` に専用で持ち、古文フラグメントは使いません。古文フラグメントは常に出力へ入り、選ばれた歌詞テーマの `Chorus:` 行は古文指示の後ろへ回されます。
 
@@ -74,6 +75,15 @@ SUNO Simple Prompt Builder V1〜V9 の GitHub Pages 公開用リポジトリで�
 - 歌詞テーマは全曲の歌詞から新しく起こした V9 専用のもの（1 アルバム 3 件・計 63 件）で、V1〜V8 のテーマは使いません。既存曲の歌詞フレーズは引用していません。
 - 古文フラグメントは V1〜V8 の文面をすべて集めて候補にし（`app.js` の `classicalFrom`）、生成のたびに 1 つ入ります。Never use も V1〜V8 の全行を候補にしています（`neverFrom`）。
 - BPM は各アルバムの行に、各曲の実測 BPM・キーを足しています。ジャンル置換（`street dance` を置き換え）は V4 と同じく既定 OFF です。
+
+## V10 の書き方
+
+- 解析元 1 曲（2:34・74 小節・実測 117.5 BPM・B♭ minor）を demucs で 4 ステムに分け、basic-pitch / pyin でボーカル・上モノ・ベースを 1 音ずつ採譜し、ドラムは 16 分グリッドでキック・スネア・ハットの有無を、全小節のステム別音量・コードと合わせて読んでいます。区画ごとの結果は音源解析メモに出ます。
+- 曲の芯は「キャッチーなフック」と「タメ → 解放」の繰り返しです。全 10 ベースが同じ Structure（15 区画・小節数 Intro 5 / Verse 1 8 / Pre-chorus 8 / Chorus 7 / Stop 1 / Interlude 4 / Verse 2 6 / Drum-out 2 / Chorus 2 7 / Stop 1 / Drop 8 / Breakdown 6 / Tension 3 / Final chorus 7 / Ending 1 = 74 小節）を持ち、イントロ・間奏の語り・ドロップの上モノだけベースごとに違います。
+- 補足は Hook（サビ頭で 5 度を ♭VI の上に伸ばし、ベースが半音下の V に落ちてペンタトニックで下降）/ Tension & release（プレサビの沈み → 1 拍 1 音の駆け上がり、サビ前 2 小節の 2 音連打とキックのフィル、サビ後の 1 小節アカペラ）/ Bass / Samples / Mix の 5 段落です。3000 文字を超えたときは Mix → Samples → Bass の順に削り、Hook・Tension & release・Structure は削りません。
+- BPM は実測 117.5 の近傍（116〜120）、ジャンル置換（`dance-pop` を置き換え）は既定 OFF です。転調・フェードアウトはしない曲なので、全ベースの Avoid に入れています。
+- 歌詞テーマ（42 件）・Never use（2 行）は V10 専用の新規で、テーマには Never use の語を入れていません。解析元のアーティスト名・曲名・歌詞・サンプル音声の文言はプロンプトのどこにも入れていません（テストで確認）。古文フラグメント・視点は使いません。
+- 採譜の生データ（小節表・ノート列・解析スクリプト）は `analysis/v10/` に置き、公開リポジトリには含めません（`.gitignore`）。
 
 ## 候補データの更新
 
